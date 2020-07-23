@@ -1,0 +1,8 @@
+COPY
+ Config folder
+ src folder
+ composer.json
+ license
+
+KE
+vendor->tymon->jwt-auth

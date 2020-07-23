@@ -1,0 +1,13 @@
+1. dokumentasi foto dari modul SLA & Module Complain
+2. Link dalam Email Sales Area langsung Login ke Module Penilaian;
+
+Email (Sudah Ok Di Server)
+Send Notifikasi
+donotreply@pgnmas.co.id
+pgnmas2017-86
+smtp : mail.pgnmas.co.id
+port : 465
+SSL
+
+Contact center
+helpdesk@pgnmas.co.id

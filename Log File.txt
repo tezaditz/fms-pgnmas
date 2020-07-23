@@ -1,0 +1,14 @@
+LOG FILE
+
+Update At : 18 Jul 2019
+Update By : Aditya
+
+Update Desciption :
+1. Tambah Kolom Tanggal Masuk pada List Complain
+2. Fix Print Dokumen Complain pada module Dokumentasi
+3. Fix Show Image Dok complain
+
+Update File :
+A. Controller :
+   1. AdminComplainController
+   2. AdminDokComplainController

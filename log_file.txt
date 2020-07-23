@@ -1,0 +1,157 @@
+=================================================
+update by      : Aditya
+update version : 2.0.2
+
+- Fixing Laporan Dokumentasi Pekerjaaan Rutin
+- Add Tandatangan , status dan datetime ( jika disetujui ) pada laporan Penilaian SLA
+
+
+Controller
+-PenilaianSlaController
+-AdminMnilaiController
+
+Model
+
+View
+- backend\report\penilaian_sla.blade.php
+- backend\dokumentasi\print2.blade.php
+
+Table
+
+- add column "tanggal_disetujui" pada tabel m_penilaian
+=====================================================================
+
+Update Version  : 2.0.3
+Update By       : Aditya
+Update At       : 15 July 2019 21:00:00
+
+Description :
+- Add Menu "Penilaian SLA" Untuk Korwil
+- Korwil Bisa Print Penilaian SLA jika sudah disetujui.
+
+Update File :
+a. Controller
+  1. AdminMNilaiController
+
+b. Model
+  1.
+c. View
+  1.
+d. Tabel
+  1.
+=====================================================================
+Update Version  : 2.0.4
+Update By       : Aditya
+Update At       : 16 July 2019 21:00:00
+
+Description :
+- Update length field problem & field notes pada tabel complain_halomas
+
+Update File :
+a. Controller
+  1. 
+
+b. Model
+  1.
+c. View
+  1.
+d. Tabel
+  1. complain_halomas :
+      - field : problem from varchar(255) to text (0)
+      - field : notes from varchar(255) to text (0)
+
+=======================================================================
+Update Version  : 2.0.5
+Update By       : Aditya
+Update At       : 30 July 2019 13:09:00s
+
+Description :
+- Filter Aset pada index complain
+
+Update File :
+a. Controller
+  1. AdminComplainController
+
+b. Model
+  1.
+c. View
+  1.
+d. Tabel
+=======================================================================
+Update Version  : 2.0.6
+Update By       : Aditya
+Update At       : 1 Aug 2019 07:50:00
+Description :
+- Hapus Foto Sebelum pada module Complain untuk Leader
+- Email Notifikasi ketika Complain Sudah Selesai ( DONE ) ke Korwil , Korea , Contact Center
+
+Update File :
+a. Controller
+  1. AdminComplainController
+
+b. Model
+  1.
+c. View
+  1. backend.workorder.complain.leader
+  2. backend.workorder.complain.detail
+d. Tabel
+
+=======================================================================
+Update Version  : 2.0.7
+Update By       : Aditya
+Update At       : 16 Aug 2019 22:14:00
+Description :
+- Fix Send Email Complain Done yang Ganda
+
+Update File :
+a. Controller
+  1. AdminComplainController
+
+b. Model
+  1.
+c. View
+  1.
+d. Tabel
+  1.
+=======================================================================
+Update Version  : 2.0.8
+Update By       : Aditya
+Update At       : 20 Aug 2019 11:24:00
+Description :
+- Fix index query limbah module
+
+Update File :
+a. Controller
+  1. Adminlimbahmodule
+
+b. Model
+  1.
+c. View
+  1.
+d. Tabel
+  1.
+=======================================================================
+Update Version  : 2.0.9
+Update By       : Aditya
+Update At       : 20 Oct 2019 20:45:00
+Description :
+1. Menambah Reset Foto Sebelum pada Module Complain
+2. Menambah Tanggal Selesai pada Module Complain
+3. Sesuaikan Order Complain dari yang terbaru
+4. Menyesuaikan Ukuran Foto pada Laporan Dokumentasi Pekerjaan
+5. Menambahkan Id Complain dari Halomas pada List Complain
+
+Update File :
+a. Controller
+  1. AdminComplainController
+  2. AdminDokComplainController
+
+b. Model
+  1.
+c. View
+  1.backend.workorder.complain.leader
+  2.backend.workorder.complain.detail
+  3.backend.dokumentasi.print
+
+d. Tabel
+  1.

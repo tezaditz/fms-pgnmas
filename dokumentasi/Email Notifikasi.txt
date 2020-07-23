@@ -1,0 +1,76 @@
+Email Notifikasi Saat Complain Masuk :
+Contoh 2 
+
+
+================================================================================================
+Yth Bapak/Ibu
+
+ PEMBERITAHUAN
+
+
+Complain/Request Baru telah masuk di Facility Management System.
+
+
+
+No Work Order	 :	
+
+Tanggal	: 
+
+User	 :	
+
+Divisi/Satker :	
+
+No Telepon :	
+
+Jenis/Kategori :
+
+Informasi :	
+ 
+
+Mohon agar dapat ditindaklanjuti dengan unit terkait
+
+
+
+Catatan :
+Email ini dikirim secara otomatis by system 
+Mohon untuk tidak mereply
+===============================================================================================
+NB : untuk user di dapatkan dari nama pelapor pada halomas.
+
+
+email notifikasi Complain Done
+
+
+
+Yth Bapak/Ibu, 
+
+Facility Management System telah menerima  hasil penyelesaian complain/request sebagai berikut,
+
+
+
+NO TICKET HALOMAS :
+
+NO WORK ORDER 	:
+
+LOKASI	:
+
+JENIS/KATEGORI 	: 
+
+KELUHAN CUSTOMER : (isi komplainan nya)
+
+CATATAN PENGELOLA : (hasil tindaklanjut nya - oleh Leader saat upload foto after pekerjaan kan ada note tuh, note itu aja dimasukan)
+
+
+STATUS : CLOSED 
+
+
+
+Klik tautan berikut LINK	
+
+
+
+Mohon agar dilakukan pengecekan kembali 
+
+Catatan :
+Email ini dikirim secara otomatis by system
+Mohon untuk tidak mereply
