@@ -86,8 +86,102 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach($detail_penilaian as $detail_penilaian)
-                        @endforeach
+                    <?php $lvl1 = 0;$lvl2 = 0;$lvl3 = 0; ?>
+                    @foreach($detail_penilaian as $data_detail)
+                        @if($lvl1 == 0)
+                            <tr class="danger">
+                                    <td colspan=4 width= 50%>{{  $data_detail->slaU }}</td>
+                            </tr>
+                            <?php $lvl1 = $data_detail->slaid; ?>
+                        @else
+                            @if($lvl1 != $data_detail->slaid)
+                            <tr class="danger">
+                                <td colspan=4 width= 50%>{{  $data_detail->slaU }}</td>
+                            </tr>
+                            <?php $lvl1 = $data_detail->slaid; ?>
+                            @endif
+                        @endif
+
+                        @if($lvl2 == 0)
+                            <tr class="success">
+                                    <td colspan=4 width= 50%>{{  $data_detail->detailslaU }}</td>
+                            </tr>
+                            <?php $lvl2 = $data_detail->detailslaid; ?>
+                        @else
+                            @if($lvl2 != $data_detail->detailslaid)
+                            <tr class="success">
+                                <td colspan=4 width= 50%>{{  $data_detail->detailslaU }}</td>
+                            </tr>
+                            <?php $lvl2 = $data_detail->detailslaid; ?>
+                            @endif
+                        @endif
+
+                        @if($$lvl3 == 0)
+                            <tr class="info">
+                                <td>{{  $data_detail->rinciU }}</td>
+                                <td class='text-center'>
+                                    <input type="radio" name="sedia[{{ $data_detail->id }}]"  value = 1
+                                    <?php if($data_detail->sedia == 1){echo "Checked";}else{echo "disabled";} ?>> 
+                                </td>
+                                <td  class='text-center'>
+                                            <input type="radio" required name="laksana[{{ $data_detail->id }}]" value = 1
+                                            <?php if($data_detail->sedia == 1){echo "Checked";}else{echo "disabled";} ?>> Ya 
+                                            <input type="radio" required name="laksana[{{ $data_detail->id }}]" value = 0
+                                            <?php if($data_detail->sedia == 0){echo "disabled";} ?>> Tidak
+                                </td>
+                                <td  class='text-center'>
+                                    <div class='text-left'>
+                                    <input type="radio" required name="sesuai[{{ $data_detail->id }}]" value = 3
+                                    <?php if($data_detail->sedia == 1){echo "Checked";}else{echo "disabled";} ?>
+                                    > Baik
+                                    <br>
+                                    <input type="radio" required name="sesuai[{{ $data_detail->id }}]" value = 2
+                                    <?php if($data_detail->sedia == 0){echo "disabled";} ?>
+                                    > Cukup
+                                    <br>
+                                    <input type="radio" required name="sesuai[{{ $data_detail->id }}]" value = 1
+                                    <?php if($data_detail->sedia == 0){echo "disabled";} ?>
+                                    > Kurang
+                                    </div>
+                                    
+                                    </td>
+                            </tr>
+                            <?php $$lvl3 = $data_detail->rinciid; ?>
+                        @else
+                            @if($$lvl3 != $data_detail->rinciid)
+                            <tr class="info">
+                                <td>{{  $data_detail->rinciU }}</td>
+                                <td class='text-center'>
+                                    <input type="radio" name="sedia[{{ $data_detail->rincianid }}]"  value = 1
+                                    <?php if($data_detail->sedia == 1){echo "Checked";}else{echo "disabled";} ?>> 
+                                </td>
+                                <td  class='text-center'>
+                                            <input type="radio" required name="laksana[{{ $data_detail->rincianid }}]" value = 1
+                                            <?php if($data_detail->sedia == 1){echo "Checked";}else{echo "disabled";} ?>> Ya 
+                                            <input type="radio" required name="laksana[{{ $data_detail->rincianid }}]" value = 0
+                                            <?php if($data_detail->sedia == 0){echo "disabled";} ?>> Tidak
+                                </td>
+                                <td  class='text-center'>
+                                    <div class='text-left'>
+                                    <input type="radio" required name="sesuai[{{ $data_detail->rincianid }}]" value = 3
+                                    <?php if($data_detail->sedia == 1){echo "Checked";}else{echo "disabled";} ?>
+                                    > Baik
+                                    <br>
+                                    <input type="radio" required name="sesuai[{{ $data_detail->rincianid }}]" value = 2
+                                    <?php if($data_detail->sedia == 0){echo "disabled";} ?>
+                                    > Cukup
+                                    <br>
+                                    <input type="radio" required name="sesuai[{{ $data_detail->rincianid }}]" value = 1
+                                    <?php if($data_detail->sedia == 0){echo "disabled";} ?>
+                                    > Kurang
+                                    </div>
+                                    
+                                    </td>
+                            </tr>
+                            <?php $$lvl3 = $data_detail->rinciid; ?>
+                            @endif
+                        @endif
+                    @endforeach
                     </tbody>
                 </table>
             </div>
@@ -139,7 +233,7 @@
             </div>
         </div> 
     </div>
-    <div class='panel-footer'>
+    <div class='panel-footer text-center'>
     {{ csrf_field() }}
         <input type="hidden" name="master_id" id="master_id" value ="{{ $id }}">
         <input type="hidden" name="previous" id="previous" value ="{{ url()->previous() }}">

@@ -86,20 +86,24 @@
 			$this->addaction = array();
 			if(CRUDBooster::myPrivilegeId() == 5)
 			{
-				$this->addaction[] = ['label'=>'','url'=>CRUDBooster::mainpath('detail/[id]'),'icon'=>'fa fa-eye','color'=>'primary','showIf'=>"[status] == 'BARU' or [status] == 'DiTolak'"];
-				$this->addaction[] = ['label'=>'','url'=>CRUDBooster::mainpath('print/[id]'),'icon'=>'fa fa-print','color'=>'success','target'=>'_blank' ,'showIf'=>"[status] == 'SALES AREA' or [status] == 'DiSetujui' or [status] == 'LFM' "];
-				$this->addaction[] = ['label'=>'History Penilaian ','url'=>CRUDBooster::mainpath('history/[id]'),'icon'=>'fa fa-history','color'=>'success','target'=>'_blank' ,'showIf'=>"[status] == 'SALES AREA' or [status] == 'DiSetujui' or [status] == 'LFM' "];
+				$this->addaction[] = ['label'=>'','url'=>CRUDBooster::mainpath('detail/[id]'),'icon'=>'fa fa-eye','color'=>'primary','showIf'=>"[status] == 'BARU' or [status] == 'DITOLAK'"];
+				$this->addaction[] = ['label'=>'','url'=>CRUDBooster::mainpath('print/[id]'),'icon'=>'fa fa-print','color'=>'success','target'=>'_blank' ,'showIf'=>"[status] == 'SALES AREA' or [status] == 'DISETUJUI' or [status] == 'LFM' "];
+				$this->addaction[] = ['label'=>'History Penilaian ','url'=>CRUDBooster::mainpath('history/[id]'),'icon'=>'fa fa-history','color'=>'success','target'=>'_blank' ,'showIf'=>"[status] == 'SALES AREA' or [status] == 'DISETUJUI' or [status] == 'LFM' "];
 			}
-			if(CRUDBooster::myPrivilegeId() == 7)
+			if(CRUDBooster::myPrivilegeId() == 7 || CRUDBooster::myPrivilegeId() == 11)
 			{
-				$this->addaction[] = ['label'=>'','url'=>CRUDBooster::mainpath('detail/[id]'),'icon'=>'fa fa-eye','color'=>'primary','showIf'=>"[status] == 'Sales Area / LFM'"];
+				$this->addaction[] = ['label'=>'','url'=>CRUDBooster::mainpath('detail/[id]'),'icon'=>'fa fa-eye','color'=>'primary','showIf'=>"[status] == 'SALES AREA' or [status] == 'LFM'"];
 				
 			}
 
 			if(CRUDBooster::myPrivilegeId() == 4)
 			{
-				$this->addaction[] = ['label'=>'','url'=>CRUDBooster::mainpath('print/[id]'),'icon'=>'fa fa-print','color'=>'success','target'=>'_blank' ,'showIf'=>"[status] == 'DiSetujui' "];
+				$this->addaction[] = ['label'=>'','url'=>CRUDBooster::mainpath('print/[id]'),'icon'=>'fa fa-print','color'=>'success','target'=>'_blank' ,'showIf'=>"[status] == 'DISETUJUI' "];
 			}
+			if(CRUDBooster::myPrivilegeId() == 8 || CRUDBooster::myPrivilegeId() == 1){
+				$this->addaction[] = ['label'=>'','url'=>'/pgnmas/penilaian/delete/[id]','icon'=>'fa fa-trash','color'=>'danger','target'=>'_blank'];
+			}
+			
 			
 
 	        /* 
@@ -205,7 +209,8 @@
 	        | $this->load_js[] = asset("myfile.js");
 	        |
 	        */
-	        $this->load_js = array();
+			$this->load_js = array();
+			// $this->load_js[] = asset("js/workorder/mnilai.js");
 	        
 	        
 	        
@@ -286,6 +291,10 @@
 			{
 				$column_value = '<p class = "text-right">'  . number_format($column_value , 2 , "," , ".") . ' %</p>';
 			}
+			
+
+
+			
 	    }
 
 	    /*
@@ -408,7 +417,10 @@
 	    */
 	    public function hook_before_delete($id) {
 	        //Your code here
-			$detail = DB::table('detail_penilaian')->where('m_penilaian_id' , $id)->delete();
+			// $detail = DB::table('detail_penilaian')->where('m_penilaian_id' , $id)->get();
+			// if($detail){
+			// 	DB::table('detail_penilaian')->where('m_penilaian_id' , $id)->delete();
+			// }
 	    }
 
 	    /* 
@@ -426,29 +438,12 @@
 
 		public function getDetail($id)
 		{
-			// return $id;
 			 //Create an Auth
 			if(!CRUDBooster::isRead() && $this->global_privilege==FALSE || $this->button_edit==FALSE) {    
 				CRUDBooster::redirect(CRUDBooster::adminPath(),trans("crudbooster.denied_access"));
 			}
-
-			$master =  DB::table('m_penilaian')->where('id',$id)->first();
-			// Cek sedia SLA
-			$cek = DB::table('ketersediaan_sla')->where('aset_id' , $master->aset_id)
-			->where('tahun' , CRUDBooster::CurrYear())
-			->get();
-
-			if(!$cek){
-				$to = '/pgnmas/mnilai';
-                $message = 'Maaf ! Ketersediaan SLA pada Aset ini belum tersedia';
-                $type = 'info';
-                CRUDBooster::redirect($to,$message,$type);
-			}
-
-
-
 			// return  CRUDBooster::CurrYear();
-			
+			$master =  DB::table('m_penilaian')->where('id',$id)->first();
 			$aset	=  DB::table('aset')->where('id' , $master->aset_id)->first();
 			// return $master;
 			$data = [];
@@ -459,21 +454,23 @@
 			// return $data['sla'];
 			$data['detail'] = DB::table('detail_sla')
 										->where('tahun' , CRUDBooster::CurrYear())->get();
-			// $data['detail_penilaian'] = DB::table('detail_penilaian')
-			// 							->join('detail_sla' , 'detail_sla.id' , 'detail_penilaian.detail_sla_id')
-			// 							->join('rincian_pekerjaan' , 'rincian_pekerjaan.id', 'detail_penilaian.rincian_pekerjaan_id')
-			// 							->join('group_sla' , 'group_sla.id' , 'detail_penilaian.group_sla_id')
-			// 							->where('detail_penilaian.m_penilaian_id' , $id)
-			// 							->select('detail_penilaian.id' , 'detail_penilaian.rincian_pekerjaan_id as rincian_pekerjaan_id' ,'rincian_pekerjaan.uraian as uraian' , 'detail_penilaian.group_sla_id as groupid' , 'detail_penilaian.detail_sla_id as detail_sla_id')
-			// 							->get();
-
-			$data['detail_penilaian'] = DB::table('ketersediaan_sla')
-										->join('sla' , 'sla.id' , 'ketersediaan_sla.sla_id')
-										->join('detail_sla' , 'detail_sla.id' , 'ketersediaan_sla.detail_sla_id')
+			
+			$data['detail_penilaian']  = DB::table('ketersediaan_sla')
+										->join('sla' , 'sla.id', 'ketersediaan_sla.sla_id')
+										->join('detail_sla' , 'detail_sla.id', 'ketersediaan_sla.detail_sla_id')
 										->join('rincian_pekerjaan' , 'rincian_pekerjaan.id', 'ketersediaan_sla.rincian_pekerjaan_id')
-										->where('aset_id' , $master->aset_id)
+										->where('ketersediaan_sla.aset_id' , $master->aset_id)
 										->where('ketersediaan_sla.tahun' , CRUDBooster::CurrYear())
-										->select('sla.uraian as sla' , 'detail_sla.uraian as detailUraian' , 'rincian_pekerjaan.uraian as rincian_pekerjaan_uraian')
+										->select(
+											'ketersediaan_sla.id as id',
+											'ketersediaan_sla.sla_id as slaid',
+											'ketersediaan_sla.detail_sla_id as detailslaid',
+											'ketersediaan_sla.rincian_pekerjaan_id as rincianid',
+											'sla.uraian as slaU',
+											'detail_sla.uraian as detailslaU',
+											'rincian_pekerjaan.uraian as rinciU',
+											'ketersediaan_sla.ketersediaan as sedia'
+											)
 										->get();
 			
 			
@@ -739,6 +736,87 @@
 			$this->cbView('backend.workorder.penilaian_sla.history',$data);
 		}
 
+		public function getdraft($id){
+			//Create an Auth
+
+			if(CRUDBooster::myPrivilegeId() == 11 || CRUDBooster::myPrivilegeId() == 7)
+			{
+				return redirect('/pgnmas/logout');
+			}
+			
+			// return  CRUDBooster::CurrYear();
+			$master =  DB::table('m_penilaian')->where('id',$id)->first();
+			$aset	=  DB::table('aset')->where('id' , $master->aset_id)->first();
+			// return $master;
+			$data = [];
+			$data['page_title'] = 'Draft Penilaian SLA';
+			$data['row'] = $master;
+			$data['aset'] = $aset;
+			$data['sla'] = DB::table('sla')->where('tahun' , CRUDBooster::CurrYear())->get();
+			// return $data['sla'];
+			$data['detail'] = DB::table('detail_sla')
+										->where('tahun' , CRUDBooster::CurrYear())->get();
+
+			$data['detail_penilaian']  = DB::table('detail_penilaian')
+										->join('m_penilaian' , 'm_penilaian.id' , 'detail_penilaian.m_penilaian_id')
+										->join('sla' , 'sla.id', 'detail_penilaian.sla_id')
+										->join('detail_sla' , 'detail_sla.id', 'detail_penilaian.detail_sla_id')
+										->join('rincian_pekerjaan' , 'rincian_pekerjaan.id', 'detail_penilaian.rincian_pekerjaan_id')
+										->where('detail_penilaian.m_penilaian_id' , $id)
+										->where('m_penilaian.tahun' , CRUDBooster::CurrYear())
+										->select(
+											'detail_penilaian.id as id',
+											'detail_penilaian.sla_id as slaid',
+											'detail_penilaian.detail_sla_id as detailslaid',
+											'detail_penilaian.rincian_pekerjaan_id as rincianid',
+											'sla.uraian as slaU',
+											'detail_sla.uraian as detailslaU',
+											'rincian_pekerjaan.uraian as rinciU',
+											'detail_penilaian.ketersediaan_fasilitas as sedia',
+											'detail_penilaian.dilaksanakan as laksana',
+											'detail_penilaian.sesuai as sesuai'
+											)
+										->get();
+
+
+			$data['sedia'] = DB::table('ketersediaan_sla')
+							->where('aset_id' , $master->aset_id)
+							->where('tahun' , CRUDBooster::CurrYear())
+							->get();
+			// return $data['sedia'];
+			$data['id'] = $id;		
+			// return $data;
+			//Please use cbView method instead view method from laravel
+			$this->cbView('backend.workorder.penilaian_sla.draft',$data);
+		}
+
+		public function getdelete($id){
+
+			$data = DB::table('detail_history_penilaian')->where('m_penilaian_id' , $id)->get();
+			if($data){
+				DB::table('detail_history_penilaian')->where('m_penilaian_id' , $id)->delete();
+			}
+
+			$data = DB::table('history_penilaian_sla')->where('id_m_penilaian' , $id)->get();
+			if($data){
+				DB::table('history_penilaian_sla')->where('id_m_penilaian' , $id)->delete();
+			}
+
+			$data = DB::table('detail_penilaian')->where('m_penilaian_id' , $id)->get();
+			if($data){
+				DB::table('detail_penilaian')->where('m_penilaian_id' , $id)->delete();
+			}
+
+			$detail = DB::table('m_penilaian')->where('id' , $id)->get();
+			if($detail){
+				DB::table('m_penilaian')->where('id' , $id)->delete();
+			}
+
+			$to = '/pgnmas/mnilai/';
+            $message = 'Data Penilaian Telah DiHapus';
+            $type = 'info';
+            CRUDBooster::redirect($to,$message,$type);
+		}
 
 
 	    //By the way, you can still create your own method in here... :) 

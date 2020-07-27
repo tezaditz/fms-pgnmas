@@ -18,7 +18,7 @@ class KetersediaanSlaController extends Controller
      */
     public function store(Request $request)
     {
-        // return $request->all();
+        // return $request->subdetail;
         $data = $request;
         if($data)
         {
@@ -35,11 +35,12 @@ class KetersediaanSlaController extends Controller
             }
 
 
-            if($request->detail)
+            if($request->subdetail)
             {
                 $insert = [];
                 $parameter = DB::table('parameter')->where('nama' , 'tahun')->first();
                 foreach ($request->subdetail as $key =>  $value) {
+                    // return $value;
                     $sub_detail_sla = DB::table('sub_detail_sla')->where('id' , $key)->first();
                     $detail_sla = DB::table('detail_sla')->where('id' , $sub_detail_sla->detail_sla_id)->first();
                     
@@ -49,7 +50,7 @@ class KetersediaanSlaController extends Controller
                     $insert[$key]['detail_sla_id'] = $sub_detail_sla->detail_sla_id;
                     $insert[$key]['group_sla_id'] = $sub_detail_sla->group_sla_id;
                     $insert[$key]['rincian_pekerjaan_id'] = $sub_detail_sla->rincian_pekerjaan_id;
-                    $insert[$key]['ketersediaan'] = 1;
+                    $insert[$key]['ketersediaan'] = $value;
                 }
                 if($insert)
                 {
@@ -58,16 +59,6 @@ class KetersediaanSlaController extends Controller
             }
 
             
-
-			// $insert = [];
-			// for ($i=1; $i <= 12  ; $i++) { 
-			// 	$insert['tahun'] = CRUDBooster::CurrYear();
-			// 	$insert['bulan'] = $i;
-			// 	$insert['aset_id'] = $request->aset_id;
-			// 	$insert['status'] = 'Baru';
-
-			// 	DB::table('m_penilaian')->insert($insert);
-			// }
 
             $to = '/pgnmas/sdaset';
             $message = 'Data Berhasil Disimpan';
@@ -89,25 +80,13 @@ class KetersediaanSlaController extends Controller
 
             if($request->subdetail)
             {
-                DB::table('ketersediaan_sla')->where('aset_id' , $id)->delete();
+                // DB::table('ketersediaan_sla')->where('aset_id' , $id)->delete();
 
                 $insert = [];
                 $parameter = DB::table('parameter')->where('nama' , 'tahun')->first();
                 foreach ($request->subdetail as $key =>  $value) {
-                    $sub_detail_sla = DB::table('sub_detail_sla')->where('id' , $key)->first();
-                    $detail_sla = DB::table('detail_sla')->where('id' , $sub_detail_sla->detail_sla_id)->first();
-                    
-                    $insert[$key]['tahun'] = $request->tahun;
-                    $insert[$key]['aset_id'] = $request->aset_id;
-                    $insert[$key]['sla_id'] = $detail_sla->sla_id;
-                    $insert[$key]['detail_sla_id'] = $sub_detail_sla->detail_sla_id;
-                    $insert[$key]['group_sla_id'] = $sub_detail_sla->group_sla_id;
-                    $insert[$key]['rincian_pekerjaan_id'] = $sub_detail_sla->rincian_pekerjaan_id;
-                    $insert[$key]['ketersediaan'] = 1;
-                }
-                if($insert)
-                {
-                    DB::table('ketersediaan_sla')->insert($insert);
+                    DB::table('ketersediaan_sla')->where('id' , $key)
+                                                ->update(['ketersediaan'=> $value]);
                 }
             
 

@@ -87,505 +87,119 @@ class PenilaianSlaController extends Controller
         //
     }
 
+
     public function simpan(Request $request , $id)
     {
         // return $request->all();
-        // return 'Ini Datetime :' . Carbon::now();
-        $cek = DB::table('m_penilaian')->where('id' , $id)->first();
-        // return $request->all();
-        if($request && ($cek->status == 'BARU') )
-        {
-            $sedia = $request->sedia;
-            $laksana = $request->laksana;
-            $sesuai     = $request->sesuai;
-            $master_id = $request->master_id;
-            $catatan = '';
-            $tgl = null;
-            foreach ($sedia as $key => $value) {
-                
-                if($laksana[$key] != 0){$nilai_sesuai = $sesuai[$key];}
-                else{$nilai_sesuai = 0;}
+        if($request){
+            $data['sedia']      = $request->sedia;
+            $data['laksana']    = $request->laksana;
+            $data['sesuai']    = $request->sesuai;
 
-                DB::table('detail_penilaian')->where('id' , $key)
-                                            ->update([
-                                                'ketersediaan_fasilitas' => $value,
-                                                'dilaksanakan' => $laksana[$key],
-                                                'sesuai' => $nilai_sesuai
-                                                ]);
+            // return $data['sesuai'];
+            // $nilai_sesuai = 0;
+            foreach ($data['sedia'] as $key => $value) {
+                $dataketersediaan = DB::table('ketersediaan_sla')->where('id' , $key)->first();
+                // return $data['sesuai'][$key];
+                if($data['laksana'][$key] == 0){$nilai_sesuai = 0;}else{$nilai_sesuai = $data['sesuai'][$key];}
+
+                DB::table('detail_penilaian')
+                            ->where('m_penilaian_id' , $id)
+                            ->where('sla_id' , $dataketersediaan->sla_id)
+                            ->where('detail_sla_id' , $dataketersediaan->detail_sla_id)
+                            ->where('rincian_pekerjaan_id' , $dataketersediaan->rincian_pekerjaan_id)
+                            ->update([
+                                'ketersediaan_fasilitas' => $data['sedia'][$key],
+                                'dilaksanakan'           => $data['laksana'][$key],
+                                'sesuai'                 => $nilai_sesuai
+                            ]);                
+            }
+
+                $nilai = $this->hitung($id);
+            // return $nilai;
+            $this->update_master($id ,  $nilai['sedia'] , $nilai['maks']  , $nilai['persentase'] , $nilai['pencapaian'] , '' , null);
+            if(CRUDBooster::myPrivilegeId() == 11 || CRUDBooster::myPrivilegeId() == 7){
+
+                if($request->approve == 1){
+                    
+                    $this->update_status_master($id , 'DISETUJUI');
+                    $this->create_history($id);
+                }else{
+                    // return 'a';
+                    $this->update_master($id ,  $nilai['sedia'] , $nilai['maks']  , $nilai['persentase'] , $nilai['pencapaian'] , $request->catatan , null);
+                    $this->update_status_master($id , 'DITOLAK');
+                    $this->create_history($id);
+                }
+                
             }
             
-            // hitung
-                $total_sedia = DB::table('detail_penilaian')
+        
+
+
+            $to = '/pgnmas/penilaian/draft/' . $id;
+            $message = 'Form Nilai berhasil ditambahkan , Silakan Periksa Kembali Pekerjaan Anda';
+            $type = 'info';
+            CRUDBooster::redirect($to,$message,$type);
+        }
+        
+    }
+
+    public function hitung($id){
+        $total_sedia = DB::table('detail_penilaian')
                 ->where('ketersediaan_fasilitas' , 1)
-                ->where('m_penilaian_id' , $master_id)
+                ->where('m_penilaian_id' , $id)
                 ->count();
+
+                // return $total_sedia;
 
                 $total_laksana = DB::table('detail_penilaian')
                 ->where('dilaksanakan' , 1)
-                ->where('m_penilaian_id' , $master_id)
+                ->where('m_penilaian_id' , $id)
                 ->count();
 
                 $total_baik = DB::table('detail_penilaian')
                 ->where('sesuai' , 3)
-                ->where('m_penilaian_id' , $master_id)
+                ->where('m_penilaian_id' , $id)
                 ->count();
 
                 $total_cukup = DB::table('detail_penilaian')
                 ->where('sesuai' , 2)
-                ->where('m_penilaian_id' , $master_id)
+                ->where('m_penilaian_id' , $id)
                 ->count();
 
                 $total_kurang = DB::table('detail_penilaian')
                 ->where('sesuai' , 1)
-                ->where('m_penilaian_id' , $master_id)
+                ->where('m_penilaian_id' , $id)
                 ->count();
             // end hitung
             $nilai_maksimum             = $total_sedia * 3;
+            // return $total_sedia;
             $persentase_dilaksanakan    = ($total_laksana / $total_sedia) * 100;
             $pencapaian_sla             = ((($total_baik * 3) + ($total_cukup * 2) + ($total_kurang * 1)) / $nilai_maksimum) * 100;
 
-            DB::table('m_penilaian')->where('id' , $master_id)
-                                        ->update([
-                                            'ketersediaan_fasilitas' => $total_sedia,
-                                            'nilai_maksimum' => $nilai_maksimum,
-                                            'persentase_pelaksanaan' => $persentase_dilaksanakan,
-                                            'pencapaian' => $pencapaian_sla,
-                                            'status' => 'LFM',
-                                            'tanggal_disetujui' => $tgl,
-                                            'catatan' => $catatan]);
+            $data['sedia'] = $total_sedia;
+            $data['maks']   = $nilai_maksimum;
+            $data['persentase'] = $persentase_dilaksanakan;
+            $data['pencapaian'] = $pencapaian_sla;
+            return $data;
+    }
 
-            // return 'OK';
-
-            DB::table('m_penilaian')->where('id' , $master_id)
-                                        ->update([
-                                            'ketersediaan_fasilitas' => $total_sedia,
-                                            'nilai_maksimum' => $nilai_maksimum,
-                                            'persentase_pelaksanaan' => $persentase_dilaksanakan,
-                                            'pencapaian' => $pencapaian_sla,
-                                            'status' => $status,
-                                            'tanggal_disetujui' => $tgl,
-                                            'catatan' => $catatan]);
-            
-            $master = DB::table('m_penilaian')->where('id' , $master_id)->first();
-            
-            $bulan = DB::table('bulan')->where('id' , $master->bulan)->first();
-            $aset = DB::table('aset')->where('id' , $master->aset_id)->first();
-            $dataarea = DB::table('aset')->where('id' , $master->aset_id)->first();
-
-            $datauser = DB::table('cms_users')->where('id_cms_privileges' , 11)->get();
-
-            if(Count($datauser)){
-                foreach ($datauser as $key => $value) {
-                    //kirim email ke LFM paling bawar ordernya
-                    $data = [];
-                    $data['nama_sa']    = $value->username;
-                    $data['jabatan']    = "LFM";
-                    $data['lokasi']     = $aset->nama . '(' . $aset->alamat . ')';
-                    $data['pelaksanaan'] = $master->persentase_pelaksanaan . ' %';
-                    $data['pencapaian'] = $master->pencapaian . ' %';
-                    $data['link']       = url('/') . '/pgnmas/loginfromemail/' . $value->name . '/'. $value->password_code .'/'. $master->id .'/'. CRUDBooster::CurrYear();
-                    $data['bulan']      = $bulan->nama;
-                    $data['tahun']      = CRUDBooster::CurrYear();
-                    $email_tujuan       = $value->email;
-
-                    CRUDBooster::sendEmail(
-                        [
-                            'to'=>$email_tujuan,
-                            'data'=>$data,
-                            'template'=>'LaporanSLA',
-                            'attachments'=>[]
-                        ]);
-                        
-                    $config['content'] = "Form Penilaian SLA Baru : Period " . $bulan->nama . "Tahun " . $master->tahun;
-                    $config['to'] = CRUDBooster::adminPath('mnilai/detail/' . $master_id);
-                    $config['id_cms_users'] = [$value->id]; //This is an array of id users
-                    CRUDBooster::sendNotification($config);
-                }               
-                                
-
-                DB::table('m_penilaian')->where('id' , $master_id)
-                                        ->update([
-                                            'ketersediaan_fasilitas' => $total_sedia,
-                                            'nilai_maksimum' => $nilai_maksimum,
-                                            'persentase_pelaksanaan' => $persentase_dilaksanakan,
-                                            'pencapaian' => $pencapaian_sla,
-                                            'status' => 'LFM',
-                                            'tanggal_disetujui' => $tgl,
-                                            'catatan' => $catatan]);
-
-
-            }else{
-                
-                DB::table('m_penilaian')->where('id' , $master_id)
-                                        ->update([
-                                            'ketersediaan_fasilitas' => $total_sedia,
-                                            'nilai_maksimum' => $nilai_maksimum,
-                                            'persentase_pelaksanaan' => $persentase_dilaksanakan,
-                                            'pencapaian' => $pencapaian_sla,
-                                            'status' => 'SALES AREA',
-                                            'tanggal_disetujui' => $tgl,
-                                            'catatan' => $catatan]);
-
-
-                        $datauser = DB::table('user_aset')
-                                    ->select('cms_users.username as username','cms_users.email' , 'cms_users.id_cms_privileges' , 'cms_users.name as name' , 'cms_users.password_code as password_code')
-                                    ->join('cms_users' , 'user_aset.user_id' , 'cms_users.id' )
-                                    ->where('cms_users.id_cms_privileges' , 7)
-                                    ->where('user_aset.aset_id' , $master->aset_id)
-                                    ->first();
-                                    
-                                    // /kirim email ke Sales
-                                    $data = [];
-                                    $data['nama_sa']    = $datauser->username;
-                                    $data['jabatan']    = "LFM";
-                                    $data['lokasi']     = $aset->nama . '(' . $aset->alamat . ')';
-                                    $data['pelaksanaan'] = $master->persentase_pelaksanaan . ' %';
-                                    $data['pencapaian'] = $master->pencapaian . ' %';
-                                    $data['link']       = url('/') . '/pgnmas/loginfromemail/' . $datauser->name . '/'. $datauser->password_code .'/' . $master->id .'/'. CRUDBooster::CurrYear();
-                                    $data['bulan']      = $bulan->nama;
-                                    $data['tahun']      = CRUDBooster::CurrYear();
-                                    $email_tujuan       = $datauser->email;
-       
-                                    CRUDBooster::sendEmail(
-                                        [
-                                            'to'=>$email_tujuan,
-                                            'data'=>$data,
-                                            'template'=>'LaporanSLA',
-                                            'attachments'=>[]
-                                        ]);
-                                        
-                                    $config['content'] = "Form Penilaian SLA Baru : Period " . $bulan->nama . "Tahun " . $master->tahun;
-                                    $config['to'] = CRUDBooster::adminPath('mnilai/detail/' . $master_id);
-                                    $config['id_cms_users'] = [$value->id]; //This is an array of id users
-                                    CRUDBooster::sendNotification($config);
-            }        
-            
-            // insert to history
-                $ins = [];
-                $ins['id_m_penilaian']          = $id;
-                $ins['id_cms_users']            = CRUDBooster::myId();
-                $ins['tanggal_approval']        = Carbon::now();
-                $ins['ketersediaan_fasilitas']  = $total_sedia;
-                $ins['persentase_pelaksanaan']  = $persentase_dilaksanakan;
-                $ins['nilai_maksimum']          = $nilai_maksimum;
-                $ins['pencapaian']              = $pencapaian_sla;
-                $ins['catatan']                 = $catatan;
-                $ins['login_expired']           = carbon::now()->addDays(1);
-                DB::table('history_penilaian_sla')->insert($ins); 
-            
-                $cek = DB::table('detail_history_penilaian')->where('m_penilaian_id' , $id)
-                                                            ->where('user_id' , CRUDBooster::myId())
-                                                            ->get();
-                if(!$cek){
-                    $data = DB::table('detail_penilaian')->where('m_penilaian_id' , $id)->get();
-                    
-                    foreach ($data as $key => $value) {
-                        $insert = [];
-                        $insert['user_id']                  = CRUDBooster::myId();
-                        $insert['m_penilaian_id']           = $id;
-                        $insert['sla_id']                   = $value->sla_id;
-                        $insert['detail_sla_id']            = $value->detail_sla_id;
-                        $insert['group_sla_id']             = $value->group_sla_id;
-                        $insert['rincian_pekerjaan_id']     = $value->rincian_pekerjaan_id;
-                        $insert['ketersediaan_fasilitas']   = $value->ketersediaan_fasilitas;
-                        $insert['dilaksanakan']             = $value->dilaksanakan;
-                        $insert['sesuai']                   = $value->sesuai;
-                        $insert['keterangan']               = $value->keterangan;
-                        $insert['created_at']               = Carbon::now();
-                        
-                            DB::table('detail_history_penilaian')->insert($insert);
-                        
-                    }
+    public function update_master($id  , $sedia ,$maks , $persentase , $pencapaian , $catatan , $tanggal_disetujui){
+        DB::table('m_penilaian')->where('id' , $id)->update([
+            'ketersediaan_fasilitas'    => $sedia,
+            'nilai_maksimum'            => $maks,
+            'persentase_pelaksanaan'    => $persentase,
+            'pencapaian'                => $pencapaian,
+            'catatan'                   => $catatan,
+            'tanggal_disetujui'         => $tanggal_disetujui 
+        ]);
         
-                    
-                }
-            // END Insert to History
+    }
 
-
-            
-            $to = '/pgnmas/mnilai/';
-            $message = 'Form Nilai berhasil ditambahkan';
-            $type = 'info';
-            CRUDBooster::redirect($to,$message,$type);
-        }elseif($request && $cek->status == 'LFM'){
-            // Penilaian Kembali Oleh LFM
-                $sedia = $request->sedia;
-                $laksana = $request->laksana;
-                $sesuai     = $request->sesuai;
-                $master_id = $request->master_id;
-                $catatan = '';
-                // $status = 'Sales Area / LFM';
-                $tgl = null;
-
-                foreach ($sedia as $key => $value) {
-
-                    if($laksana[$key] != 0){$nilai_sesuai = $sesuai[$key];}
-                    else{$nilai_sesuai = 0;}
-
-                    DB::table('detail_penilaian')->where('id' , $key)
-                                                ->update([
-                                                    'ketersediaan_fasilitas' => $value,
-                                                    'dilaksanakan' => $laksana[$key],
-                                                    'sesuai' => $nilai_sesuai
-                                                    ]);
-                }
-
-                $total_sedia = DB::table('detail_penilaian')
-                ->where('ketersediaan_fasilitas' , 1)
-                ->where('m_penilaian_id' , $master_id)
-                ->count();
-
-                $total_laksana = DB::table('detail_penilaian')
-                ->where('dilaksanakan' , 1)
-                ->where('m_penilaian_id' , $master_id)
-                ->count();
-
-                $total_baik = DB::table('detail_penilaian')
-                ->where('sesuai' , 3)
-                ->where('m_penilaian_id' , $master_id)
-                ->count();
-
-                $total_cukup = DB::table('detail_penilaian')
-                ->where('sesuai' , 2)
-                ->where('m_penilaian_id' , $master_id)
-                ->count();
-
-                $total_kurang = DB::table('detail_penilaian')
-                ->where('sesuai' , 1)
-                ->where('m_penilaian_id' , $master_id)
-                ->count();
-
-                $nilai_maksimum             = $total_sedia * 3;
-                $persentase_dilaksanakan    = ($total_laksana / $total_sedia) * 100;
-                $pencapaian_sla             = ((($total_baik * 3) + ($total_cukup * 2) + ($total_kurang * 1)) / $nilai_maksimum) * 100;
-                $master = DB::table('m_penilaian')->where('id' , $master_id)->first();
-                $bulan = DB::table('bulan')->where('id' , $master->bulan)->first();
-                $aset = DB::table('aset')->where('id' , $master->aset_id)->first();
-                //get user sales area / lfm
-                $dataarea = DB::table('aset')->where('id' , $master->aset_id)->first();
-            // END Penilaian Kembali Oleh LFM
-
-            $datauser = DB::table('kelola_lfm')->where('id_cms_users' , CRUDBooster::myId())->first();
-            $order = $datauser->order;
-            if($order != 1){
-                $order = $order - 1;
-                $datauser = DB::table('kelola_lfm')->where('order' , $order)->first();
-                $user = DB::table('cms_users')->where('id' , $datauser->id_cms_users)->first();
-
-                $data = [];
-                $data['nama_sa']    = $user->username;
-                $data['jabatan']    = "LFM";
-                $data['lokasi']     = $aset->nama . '(' . $aset->alamat . ')';
-                $data['pelaksanaan'] = $master->persentase_pelaksanaan . ' %';
-                $data['pencapaian'] = $master->pencapaian . ' %';
-                $data['link']       = url('/') . '/pgnmas/loginfromemail/' . $user->name . '/'. $user->password_code .'/' . $master->id;
-                $data['bulan']      = $bulan->nama;
-                $data['tahun']      = CRUDBooster::CurrYear();
-                $email_tujuan       = $user->email;
-
-                CRUDBooster::sendEmail(
-                    [
-                        'to'=>$email_tujuan,
-                        'data'=>$data,
-                        'template'=>'LaporanSLA',
-                        'attachments'=>[]
-                    ]);
-                    
-                $config['content'] = "Form Penilaian SLA Baru : Period " . $bulan->nama . "Tahun " . $master->tahun;
-                $config['to'] = CRUDBooster::adminPath('mnilai/detail/' . $master_id);
-                $config['id_cms_users'] = [$value->id]; //This is an array of id users
-                CRUDBooster::sendNotification($config);
-
-                DB::table('m_penilaian')->where('id' , $master_id)
-                                        ->update([
-                                            'ketersediaan_fasilitas' => $total_sedia,
-                                            'nilai_maksimum' => $nilai_maksimum,
-                                            'persentase_pelaksanaan' => $persentase_dilaksanakan,
-                                            'pencapaian' => $pencapaian_sla,
-                                            'status' => 'LFM',
-                                            'tanggal_disetujui' => $tgl,
-                                            'catatan' => $catatan]);
-                
-                $insert_history = [];
-                // $insert_history['']
-            }else{
-                $datauser = DB::table('kelola_lfm')->where('order' , 1)->first();
-                $user = DB::table('cms_users')->where('id' , $datauser->id_cms_users)->first();
-
-                $data = [];
-                $data['nama_sa']    = $user->username;
-                $data['jabatan']    = "LFM";
-                $data['lokasi']     = $aset->nama . '(' . $aset->alamat . ')';
-                $data['pelaksanaan'] = $master->persentase_pelaksanaan . ' %';
-                $data['pencapaian'] = $master->pencapaian . ' %';
-                $data['link']       = url('/') . '/pgnmas/loginfromemail/' . $user->name . '/'. $user->password_code .'/' . $master->id;
-                $data['bulan']      = $bulan->nama;
-                $data['tahun']      = CRUDBooster::CurrYear();
-                $email_tujuan       = $user->email;
-
-                CRUDBooster::sendEmail(
-                    [
-                        'to'=>$email_tujuan,
-                        'data'=>$data,
-                        'template'=>'LaporanSLA',
-                        'attachments'=>[]
-                    ]);
-                    
-                $config['content'] = "Form Penilaian SLA Baru : Period " . $bulan->nama . "Tahun " . $master->tahun;
-                $config['to'] = CRUDBooster::adminPath('mnilai/detail/' . $master_id);
-                $config['id_cms_users'] = [$value->id]; //This is an array of id users
-                CRUDBooster::sendNotification($config);
-                if($request->approve == 1){
-                    $status = 'DiSetujui';
-                    $tgl = Carbon::now();
-                }
-                DB::table('m_penilaian')->where('id' , $master_id)
-                                        ->update([
-                                            'ketersediaan_fasilitas' => $total_sedia,
-                                            'nilai_maksimum' => $nilai_maksimum,
-                                            'persentase_pelaksanaan' => $persentase_dilaksanakan,
-                                            'pencapaian' => $pencapaian_sla,
-                                            'status' => $status,
-                                            'tanggal_disetujui' => $tgl,
-                                            'catatan' => $catatan]);
-                                            
-            }
-
-            // insert to history
-                $ins = [];
-                $ins['id_m_penilaian']          = $id;
-                $ins['id_cms_users']            = CRUDBooster::myId();
-                $ins['tanggal_approval']        = Carbon::now();
-                $ins['ketersediaan_fasilitas']  = $total_sedia;
-                $ins['persentase_pelaksanaan']  = $persentase_dilaksanakan;
-                $ins['nilai_maksimum']          = $nilai_maksimum;
-                $ins['pencapaian']              = $pencapaian_sla;
-                $ins['catatan']                 = $catatan;
-                $ins['login_expired']           = carbon::now()->addDays(1);
-                DB::table('history_penilaian_sla')->insert($ins); 
-            
-                $cek = DB::table('detail_history_penilaian')->where('m_penilaian_id' , $id)
-                                                            ->where('user_id' , CRUDBooster::myId())
-                                                            ->get();
-                if(!$cek){
-                    $data = DB::table('detail_penilaian')->where('m_penilaian_id' , $id)->get();
-                    $insert = [];
-                    foreach ($data as $key => $value) {
-                        $insert['user_id']                  = CRUDBooster::myId();
-                        $insert['m_penilaian_id']           = $id;
-                        $insert['sla_id']                   = $value->sla_id;
-                        $insert['detail_sla_id']            = $value->detail_sla_id;
-                        $insert['group_sla_id']             = $value->group_sla_id;
-                        $insert['rincian_pekerjaan_id']     = $value->rincian_pekerjaan_id;
-                        $insert['ketersediaan_fasilitas']   = $value->ketersediaan_fasilitas;
-                        $insert['dilaksanakan']             = $value->dilaksanakan;
-                        $insert['sesuai']                   = $value->sesuai;
-                        $insert['keterangan']               = $value->keterangan;
-                        $insert['created_at']               = Carbon::now();
-                    }
-        
-                    if($insert){
-                        DB::table('detail_history_penilaian')->insert($insert);
-                    }
-                }
-            // END Insert to History
-
-            return redirect('/pgnmas/logout');
-
-        }elseif($request && $cek->status == 'SALES AREA'){
-            // Di Nilai Ulang
-            
-            $sedia = $request->sedia;
-            $laksana = $request->laksana;
-            $sesuai     = $request->sesuai;
-            $master_id = $request->master_id;
-            $catatan = '';
-            // $status = 'Sales Area / LFM';
-            $tgl = null;
-
-
-            
-            foreach ($sedia as $key => $value) {
-                DB::table('detail_penilaian')->where('id' , $key)
-                                            ->update([
-                                                'ketersediaan_fasilitas' => $value,
-                                                'dilaksanakan' => $laksana[$key],
-                                                'sesuai' => $sesuai[$key]
-                                                ]);
-            }
-
-            $total_sedia = DB::table('detail_penilaian')
-            ->where('ketersediaan_fasilitas' , 1)
-            ->where('m_penilaian_id' , $master_id)
-            ->count();
-
-            $total_laksana = DB::table('detail_penilaian')
-            ->where('dilaksanakan' , 1)
-            ->where('m_penilaian_id' , $master_id)
-            ->count();
-
-            $total_baik = DB::table('detail_penilaian')
-            ->where('sesuai' , 3)
-            ->where('m_penilaian_id' , $master_id)
-            ->count();
-
-            $total_cukup = DB::table('detail_penilaian')
-            ->where('sesuai' , 2)
-            ->where('m_penilaian_id' , $master_id)
-            ->count();
-
-            $total_kurang = DB::table('detail_penilaian')
-            ->where('sesuai' , 1)
-            ->where('m_penilaian_id' , $master_id)
-            ->count();
-
-            $nilai_maksimum             = $total_sedia * 3;
-            $persentase_dilaksanakan    = ($total_laksana / $total_sedia) * 100;
-            $pencapaian_sla             = ((($total_baik * 3) + ($total_cukup * 2) + ($total_kurang * 1)) / $nilai_maksimum) * 100;
-            $master = DB::table('m_penilaian')->where('id' , $master_id)->first();
-            $bulan = DB::table('bulan')->where('id' , $master->bulan)->first();
-            $aset = DB::table('aset')->where('id' , $master->aset_id)->first();
-            //get user sales area / lfm
-            $dataarea = DB::table('aset')->where('id' , $master->aset_id)->first();
-
-            //UPDATE MASTER
-           
-            if(CRUDBooster::myPrivilegeName() == "Sales Area"){
-                $catatan = $request->catatan;
-
-                $status = 'DiTolak';
-                if($request->approve == 1){
-                    $status = 'DiSetujui';
-                    $tgl = Carbon::now();
-
-                    DB::table('m_penilaian')->where('id' , $master_id)
-                    ->update([
-                        'ketersediaan_fasilitas' => $total_sedia,
-                        'nilai_maksimum' => $nilai_maksimum,
-                        'persentase_pelaksanaan' => $persentase_dilaksanakan,
-                        'pencapaian' => $pencapaian_sla,
-                        'status' => $status,
-                        'tanggal_disetujui' => $tgl,
-                        'catatan' => $catatan]);
-                };
-            }
-
-            // insert to history
-                $ins = [];
-                $ins['id_m_penilaian']          = $id;
-                $ins['id_cms_users']            = CRUDBooster::myId();
-                $ins['tanggal_approval']        = Carbon::now();
-                $ins['ketersediaan_fasilitas']  = $total_sedia;
-                $ins['persentase_pelaksanaan']  = $persentase_dilaksanakan;
-                $ins['nilai_maksimum']          = $nilai_maksimum;
-                $ins['pencapaian']              = $pencapaian_sla;
-                $ins['catatan']                 = $catatan;
-                DB::table('history_penilaian_sla')->insert($ins); 
-            // END Insert to History
-
-            return redirect('/pgnmas/logout');
-        }
-
+    public function update_status_master($id , $status){
+        DB::table('m_penilaian')->where('id' , $id)->update([
+            'status'                    => $status
+        ]);
     }
 
     public function simpan_sales(Request $request , $id)
@@ -617,4 +231,129 @@ class PenilaianSlaController extends Controller
             CRUDBooster::redirect($to,$message,$type);
         }
     }
+
+    public function edit_nilai(Request $request , $id){
+        // return $id;
+        // return $request->form_laksana[$request->id_detail_penilaian];
+        if($request){
+            
+
+                DB::table('detail_penilaian')->where('id' , $request->id_detail_penilaian)
+                                            ->update([
+                                                'dilaksanakan' => $request->form_laksana[$request->id_detail_penilaian],
+                                                'sesuai' => $request->form_sesuai[$request->id_detail_penilaian],
+                                                ]);
+                
+           
+            return redirect('/pgnmas/penilaian/draft/' . $id);
+        }
+    }
+
+    public function send($id){
+
+            $this->hitung($id);
+
+            $master = DB::table('m_penilaian')->where('id' , $id)->first();
+            $bulan = DB::table('bulan')->where('id' , $master->bulan)->first();
+            $aset = DB::table('aset')->where('id' , $master->aset_id)->first();
+            $dataarea = DB::table('aset')->where('id' , $master->aset_id)->first();
+
+            $SAH = DB::table('user_aset')->where('aset_id' , $master->aset_id )
+                                            ->join('cms_users' , 'cms_users.id' , 'user_aset.user_id')
+                                            ->where('cms_users.id_cms_privileges' , 11)
+                                            ->get();
+            $jabatan = 'LFM';
+            $this->update_status_master($id , 'LFM');
+            if(Count($SAH) == 0){
+                $jabatan = 'SALES AREA';
+                $SAH = DB::table('user_aset')->where('aset_id' , $master->aset_id )
+                                            ->join('cms_users' , 'cms_users.id' , 'user_aset.user_id')
+                                            ->where('cms_users.id_cms_privileges' , 7)
+                                            ->get();
+            }
+
+            if(Count($SAH) == 0){
+                $to = '/pgnmas/mnilai/detail/' . $id;
+                $message = 'Data LFM / Sales Area Pada Aset ini Tidak ditemukan !';
+                $type = 'warning';
+                CRUDBooster::redirect($to,$message,$type);
+            }else{
+                // kirim email
+                $this->update_status_master($id , 'SALES AREA');
+                foreach ($SAH as $key => $value) {
+                    //kirim email ke LFM paling bawar ordernya
+                    $data = [];
+                    $data['nama_sa']    = $value->username;
+                    $data['jabatan']    = $jabatan;
+                    $data['lokasi']     = $aset->nama . '(' . $aset->alamat . ')';
+                    $data['pelaksanaan'] = $master->persentase_pelaksanaan . ' %';
+                    $data['pencapaian'] = $master->pencapaian . ' %';
+                    $data['link']       = url('/') . '/pgnmas/loginfromemail/' . $value->name . '/'. $value->password_code .'/'. $master->id .'/'. CRUDBooster::CurrYear();
+                    $data['bulan']      = $bulan->nama;
+                    $data['tahun']      = CRUDBooster::CurrYear();
+                    $email_tujuan       = $value->email;
+
+                    CRUDBooster::sendEmail(
+                        [
+                            'to'=>$email_tujuan,
+                            'data'=>$data,
+                            'template'=>'LaporanSLA',
+                            'attachments'=>[]
+                        ]);
+                        
+                    $config['content'] = "Form Penilaian SLA Baru : Period " . $bulan->nama . "Tahun " . $master->tahun;
+                    $config['to'] = CRUDBooster::adminPath('mnilai/detail/' . $master_id);
+                    $config['id_cms_users'] = [$value->id]; //This is an array of id users
+                    CRUDBooster::sendNotification($config);
+                } 
+            }
+            $this->update_master($id , $master->ketersediaan_fasilitas , $master->nilai_maksimum ,  $master->persentase_pelaksanaan , $master->pencapaian , '' , Carbon::now());
+            
+            
+            
+            
+            $this->create_history($id);
+
+            $to = '/pgnmas/mnilai';
+            $message = 'Form Nilai berhasil dikirim';
+            $type = 'info';
+            CRUDBooster::redirect($to,$message,$type);
+    }
+
+    public function create_history($id){
+        $data = DB::table('m_penilaian')->where('id' , $id)->first();
+
+        $insert = [];
+        $insert['id_m_penilaian']           = $id;
+        $insert['id_cms_users']             = CRUDBooster::myId();
+        $insert['tanggal_approval']         = Carbon::now();
+        $insert['ketersediaan_fasilitas']  = $data->ketersediaan_fasilitas;
+        $insert['persentase_pelaksanaan']  = $data->persentase_pelaksanaan;
+        $insert['nilai_maksimum']          = $data->nilai_maksimum;
+        $insert['pencapaian']              = $data->pencapaian;
+        $insert['catatan']                 = $catatan;
+        if($insert){
+            DB::table('history_penilaian_sla')->insert($insert);
+        }
+        $insert = [];
+        $detail = DB::table('detail_penilaian')->where('m_penilaian_id' , $id)->get();
+        foreach ($detail as $key => $value) {
+            $insert['user_id']                  = CRUDBooster::myId();
+            $insert['m_penilaian_id']           = $id;
+            $insert['sla_id']                   = $value->sla_id;
+            $insert['detail_sla_id']            = $value->detail_sla_id;
+            $insert['group_sla_id']             = $value->group_sla_id;
+            $insert['rincian_pekerjaan_id']     = $value->rincian_pekerjaan_id;
+            $insert['ketersediaan_fasilitas']   = $value->ketersediaan_fasilitas;
+            $insert['dilaksanakan']             = $value->dilaksanakan;
+            $insert['sesuai']                   = $value->sesuai;
+            $insert['keterangan']               = $value->keterangan;
+            $insert['created_at']               = Carbon::now();
+            if($insert){
+                DB::table('detail_history_penilaian')->insert($insert);
+            }
+        }
+
+    }
+
 }

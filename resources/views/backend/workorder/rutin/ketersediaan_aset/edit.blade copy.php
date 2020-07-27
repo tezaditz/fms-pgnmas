@@ -7,32 +7,33 @@
   <div class='panel panel-default'>
     <div class='panel-heading'>Add SLA Aset</div>
     <div class='panel-body'>
-      <form method='post' action='{{ route("simpan-sedia-sla") }}' class='form-horizontal'>
+      <form method='post' action='{{ route("update-sedia-sla" , $id) }}' class='form-horizontal'>
       <div class='form-group'>
             <label class='control-label col-sm-2'>Tahun
                         <span class='text-danger' title='This field is required'>*</span>
             </label>
         
             <div class="col-sm-10">
-                <input type="text" class="form-control" id='tahun' name="tahun" value = "{{ CRUDBooster::CurrYear() }}" readonly>
-                <div class="text-danger">
-                    <p class='help-block'></p>
-                </div>
-            </div>
+                        <input type='number' step="1" title="Tahun"
+                            required readonly     class='form-control'
+                            name="tahun" id="tahun" value='{{ CRUDBooster::CurrYear() }}'/>
+                        <div class="text-danger"></div>
+                        <p class='help-block'></p>
+                    </div>
         </div>
+        
         <div class='form-group'>
+        
             <label class='control-label col-sm-2'>Aset
                         <span class='text-danger' title='This field is required'>*</span>
             </label>
         
+
+
+
             <div class="col-sm-10">
-                <select style='width:100%' class='form-control' id="aset_id"
-                    required    name="aset_id"  >
-                    <option value="">-- Pilih Aset --</option>
-                    @foreach($aset as $data_aset)
-                    <option value="{{ $data_aset->id }}">{{ $data_aset->nama }}</option>
-                    @endforeach
-                </select>
+            <input type="hidden" class="form-control" id="aset_id" name="aset_id" value="{{ $aset->id }}"> 
+            <input type="text" class="form-control" id="aset_name" name="aset_name" value="{{ $aset->nama }}" disabled>
                 <div class="text-danger">
                     <p class='help-block'></p>
                 </div>
@@ -40,7 +41,6 @@
         </div>
         <!-- SLA -->
         
-
         <table class='table table-striped table-bordered'>
             <thead>
                 <tr>
@@ -58,19 +58,46 @@
                     </strong>
                     </td>
                     <td class='text-center'>
-                    <input type="checkbox" name="master[{{ $data_sla->id }}]" class='master[{{$data_sla->id}}]' value="{{ $data_sla->id }}" onClick='check_uncheck_checkbox(this , this.checked);'>
+                    
+                    <input type="checkbox" name="master[{{ $data_sla->id }}]" class='master[{{$data_sla->id}}]' value="{{ $data_sla->id }}" onClick='check_uncheck_checkbox(this , this.checked);' 
+                    <?php
+                    foreach ($sla_id as $key => $value) {
+                        if($data_sla->id == $value->sla_id)
+                        {
+                            echo 'Checked';
+                        }
+                    }
+                   ?>
+                   
+                    >
                     </td>
                 </tr>
-                
                 @foreach($detail_sla as $data_detail_sla)
                     @if($data_detail_sla->sla_id == $data_sla->id)
                         <tr class="success">
-                            <td>{{ $data_detail_sla->uraian }}</td>
+                            <td>
+                            
+                            {{ $data_detail_sla->uraian }}</td>
                             <td class='text-center'>
-                            <input type="checkbox"  name="detail[{{ $data_detail_sla->id }}]" class='master[{{$data_sla->id}}]' value="{{ $data_detail_sla->id }}" onClick='check_uncheck_checkbox_sub(this , this.checked);'>
+                            <input type="checkbox"  name="detail[{{ $data_detail_sla->id }}]" class='master[{{$data_sla->id}}]' value="{{ $data_detail_sla->id }}" onClick='check_uncheck_checkbox_sub(this , this.checked);' 
+                            <?php
+                                    $x = 0;
+                                    foreach ($ketersediaan as $key => $value) {
+                                        if($data_detail_sla->id == $value->detail_sla_id)
+                                        {
+                                            if($x == 0){
+                                                $x = 1;
+                                            }else{ $x = 2;}
+                                            
+                                        }
+                                        if($x == 1){
+                                            echo 'Checked';
+                                        }
+
+                                    }
+                                    ?>>
                             </td>
                         </tr>
-                        
                         @foreach($sub_detail_sla as $data_sub_detail)
                             @if($data_sub_detail->detail_id == $data_detail_sla->id)
                                 <tr class="info">
@@ -80,8 +107,16 @@
                                     @endif
                                     {{ $data_sub_detail->uraian }}</td>
                                     <td class='text-center'>
-                                    <input type="hidden" name="subdetail[{{ $data_sub_detail->id }}]" value='0'>
-                                    <input type="checkbox" id='detail[{{ $data_detail_sla->id }}]' name="subdetail[{{ $data_sub_detail->id }}]" class='master[{{$data_sla->id}}]' value = 1>
+                                    <input type="hidden" name="subdetail[{{ $data_sub_detail->id }}]" value=0>
+                                    <input type="checkbox" id='detail[{{ $data_detail_sla->id }}]' name="subdetail[{{ $data_sub_detail->id }}]" class='master[{{$data_sla->id}}]' value="{{ $data_sub_detail->rincian_pekerjaan_id }}"
+                                    <?php
+                                    foreach ($ketersediaan as $key => $value) {
+                                        if($data_sub_detail->rincian_pekerjaan_id == $value->rincian_pekerjaan_id)
+                                        {
+                                            echo 'Checked';
+                                        }
+                                    }
+                                    ?>>
                                     </td>
                                 </tr>
                             @endif

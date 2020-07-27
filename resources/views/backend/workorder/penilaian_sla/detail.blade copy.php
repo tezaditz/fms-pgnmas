@@ -87,117 +87,87 @@
                     </thead>
                     <tbody>
                     @foreach($sla as $slas)
-                        
-                        <tr>
+                        <tr class="danger">
                             <td colspan=4>
                             <strong>
                                 {{ $slas->uraian }}
                             </strong>
                             </td>
-                           
                         </tr>
-                        @foreach($detail_sla as $details)
+                        @foreach($detail as $details)
                             @if($details->sla_id == $slas->id)
-                                <tr>
-                                    <td style="width:50%">{{ $details->uraian }}</td>
-                                    <td class='text-center'>
+                            <tr class="success">
+                                <td colspan=4 width= 50%>
                                     
-                                    <input type="radio" name="sedia[{{ $details->id }}]"  value = 1
-                                        <?php 
-                                        $status_sedia = 0;
-                                        foreach ($sedia as $value) {
-                                            if($value->detail_sla_id == $details->detailSlaId)
-                                            {
-                                                if($value->ketersediaan == 1)
-                                                {
-                                                   $status_sedia = 1;
-                                                }
-                                            }
-                                            
-                                        }
-                                        if($status_sedia == 1)
-                                        {
-                                            echo "Checked";
-                                        }
-                                        else
-                                        {
-                                            echo "disabled";
-                                        }
-                                        ?>
-                                    > 
-                                    </td>
-                                    <td  class='text-center'>
-                                        <input type="radio" required name="laksana[{{ $details->id }}]" value = 1
-                                        <?php 
-                                           foreach ($sedia as $key => $value) {
-                                               $ketersediaan[$key] = $value->detail_sla_id;
-                                           }
-                                           
-                                           if(!in_array($details->detailSlaId , $ketersediaan))
-                                           {
-                                               echo "Disabled";
-                                           }else{
-                                               echo 'Checked';
-                                           }
-                                           
-                                        ?>
-                                    > Ya 
-                                        <input type="radio" required name="laksana[{{ $details->id }}]" value = 0
-                                        <?php foreach ($sedia as $key => $value) { $ketersediaan[$key] = $value->detail_sla_id; }
-                                           if(!in_array($details->detailSlaId , $ketersediaan))
-                                           {echo "Disabled";}                                          
-                                        ?>
-                                    > Tidak
-                                    </td>
-                                    <td  class='text-center'>
+                                    {{ $details->uraian }}
+                                    
+                                </td>
+                            </tr>
+                                @foreach($detail_penilaian as $subdetail)
+                                    @if($subdetail->detail_sla_id == $details->id)
+                                    <tr class="info">
+                                        <td>{{ $subdetail->uraian }} </td>
+                                        <td class='text-center'>
+                                            <input type="radio" name="sedia[{{ $subdetail->id }}]"  value = 1
+                                                <?php 
+                                                    $status_sedia = 0;
+                                                    foreach ($sedia as $value) {                                                        
+                                                        if($value->rincian_pekerjaan_id == $subdetail->rincian_pekerjaan_id)
+                                                        {
+                                                            if($value->ketersediaan == 1){$status_sedia = 1;}
+                                                        }                                                        
+                                                    }
+                                                    if($status_sedia == 1){echo "Checked";}
+                                                    else{echo "disabled";}
+                                                ?>> 
+                                        </td>
+                                        <td  class='text-center'>
+                                            <input type="radio" required name="laksana[{{ $subdetail->id }}]" value = 1
+                                                <?php 
+                                                    foreach ($sedia as $key => $value){$ketersediaan[$key] = $value->rincian_pekerjaan_id;}
+                                                    // echo $subdetail->rincian_pekerjaan_id;
+                                                    if(!in_array($subdetail->rincian_pekerjaan_id , $ketersediaan)) {echo "Disabled";}else{echo 'Checked';}
+                                                ?>
+                                            > Ya 
+                                            <input type="radio" required name="laksana[{{ $subdetail->id }}]" value = 0
+                                                <?php 
+                                                    foreach ($sedia as $key => $value){$ketersediaan[$key] = $value->rincian_pekerjaan_id;}
+                                                    // echo $subdetail->rincian_pekerjaan_id;
+                                                    if(!in_array($subdetail->rincian_pekerjaan_id , $ketersediaan)) {echo "Disabled";}
+                                                ?>
+                                            > Tidak
+                                        </td>
+                                        <td  class='text-center'>
                                     <div class='text-left'>
-                                    <input type="radio" required name="sesuai[{{ $details->id }}]" value = 3
+                                    <input type="radio" required name="sesuai[{{ $subdetail->id }}]" value = 3
                                         <?php 
-                                           foreach ($sedia as $key => $value) {
-                                               $ketersediaan[$key] = $value->detail_sla_id;
-                                           }
-
-                                           if(!in_array($details->detailSlaId , $ketersediaan))
-                                           {
-                                               echo "Disabled";
-                                           }
-                                           else{
-                                               echo 'Checked';
-                                           }
+                                           foreach ($sedia as $key => $value) {$ketersediaan[$key] = $value->rincian_pekerjaan_id;}
+                                           if(!in_array($subdetail->rincian_pekerjaan_id , $ketersediaan)){echo "Disabled";}
+                                           else{echo 'Checked';}
                                         ?>
                                     > Baik
                                     <br>
-                                    <input type="radio" required name="sesuai[{{ $details->id }}]" value = 2
+                                    <input type="radio" required name="sesuai[{{ $subdetail->id }}]" value = 2
                                         <?php 
-                                           foreach ($sedia as $key => $value) {
-                                               $ketersediaan[$key] = $value->detail_sla_id;
-                                           }
-
-                                           if(!in_array($details->detailSlaId , $ketersediaan))
-                                           {
-                                               echo "Disabled";
-                                           }
+                                           foreach ($sedia as $key => $value) {$ketersediaan[$key] = $value->rincian_pekerjaan_id;}
+                                           if(!in_array($subdetail->rincian_pekerjaan_id , $ketersediaan)){echo "Disabled";}
                                            
                                         ?>
                                     > Cukup
                                     <br>
-                                    <input type="radio" required name="sesuai[{{ $details->id }}]" value = 1
+                                    <input type="radio" required name="sesuai[{{ $subdetail->id }}]" value = 1
                                         <?php 
-                                           foreach ($sedia as $key => $value) {
-                                               $ketersediaan[$key] = $value->detail_sla_id;
-                                           }
-
-                                           if(!in_array($details->detailSlaId , $ketersediaan))
-                                           {
-                                               echo "Disabled";
-                                           }
+                                           foreach ($sedia as $key => $value) {$ketersediaan[$key] = $value->rincian_pekerjaan_id;}
+                                           if(!in_array($subdetail->rincian_pekerjaan_id , $ketersediaan)){echo "Disabled";}
                                            
                                         ?>
                                     > Kurang
                                     </div>
                                     
                                     </td>
-                                </tr>
+                                    </tr>
+                                    @endif
+                                @endforeach
                             @endif
                         @endforeach
                         

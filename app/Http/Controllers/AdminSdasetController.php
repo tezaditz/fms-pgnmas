@@ -397,14 +397,31 @@
 			  $data['aset'] = DB::table('aset')->where('id' , $id)->first();
 			  $data['sla'] = DB::table('sla')->where('tahun' , CRUDBooster::CurrYear())->get(['id' , 'uraian']);
 			  $data['detail_sla'] = DB::table('detail_sla')->where('tahun' , CRUDBooster::CurrYear())->get(['id' , 'sla_id' , 'uraian']);
-			  $data['sub_detail_sla'] = DB::table('sub_detail_sla')
-										->join('detail_sla' , 'sub_detail_sla.detail_sla_id' , 'detail_sla.id')
-										->join('rincian_pekerjaan' , 'sub_detail_sla.rincian_pekerjaan_id' , 'rincian_pekerjaan.id')
-										->join('group_sla' , 'sub_detail_sla.group_sla_id' , 'group_sla.id')
-										->where('sub_detail_sla.tahun' , CRUDBooster::CurrYear())
-										->select('sub_detail_sla.id as id' , 'sub_detail_sla.detail_sla_id as detail_id' , 'sub_detail_sla.group_sla_id as group_sla_id' , 'group_sla.uraian as Nmgroup' , 'rincian_pekerjaan.id as rincian_pekerjaan_id' , 'rincian_pekerjaan.uraian as uraian')
-										->get(['id' , 'detail_id' , 'uraian' , 'rincian_pekerjaan_id']);
-			// return $data['sub_detail_sla'];
+			//   $data['sub_detail_sla'] = DB::table('sub_detail_sla')
+			// 							->join('detail_sla' , 'sub_detail_sla.detail_sla_id' , 'detail_sla.id')
+			// 							->join('rincian_pekerjaan' , 'sub_detail_sla.rincian_pekerjaan_id' , 'rincian_pekerjaan.id')
+			// 							->join('group_sla' , 'sub_detail_sla.group_sla_id' , 'group_sla.id')
+			// 							->where('sub_detail_sla.tahun' , CRUDBooster::CurrYear())
+			// 							->select('sub_detail_sla.id as id' , 'sub_detail_sla.detail_sla_id as detail_id' , 'sub_detail_sla.group_sla_id as group_sla_id' , 'group_sla.uraian as Nmgroup' , 'rincian_pekerjaan.id as rincian_pekerjaan_id' , 'rincian_pekerjaan.uraian as uraian')
+			// 							->get(['id' , 'detail_id' , 'uraian' , 'rincian_pekerjaan_id']);
+			  $data['ketersediaan']	= DB::table('ketersediaan_sla')
+										->join('sla' , 'sla.id', 'ketersediaan_sla.sla_id')
+										->join('detail_sla' , 'detail_sla.id', 'ketersediaan_sla.detail_sla_id')
+										->join('rincian_pekerjaan' , 'rincian_pekerjaan.id', 'ketersediaan_sla.rincian_pekerjaan_id')
+										->where('ketersediaan_sla.aset_id' , $id)
+										->where('ketersediaan_sla.tahun' , CRUDBooster::CurrYear())
+										->select(
+											'ketersediaan_sla.id as id',
+											'ketersediaan_sla.sla_id as slaid',
+											'ketersediaan_sla.detail_sla_id as detailslaid',
+											'ketersediaan_sla.rincian_pekerjaan_id as rincianid',
+											'sla.uraian as slaU',
+											'detail_sla.uraian as detailslaU',
+											'rincian_pekerjaan.uraian as rinciU',
+											'ketersediaan_sla.ketersediaan as sedia'
+											)
+										->get();
+			// return $data['ketersediaan'];
 
 			  $data['aset_id'] = $id;
 			  $data['sla_id'] = DB::table('ketersediaan_sla')

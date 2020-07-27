@@ -86,3 +86,8 @@ Route::get('/pgnmas/sa/check_path' , 'MySqlController@cek_path')->name('checkPat
 
 Route::get('/pgnmas/utilitas/{utilitas?}/{id?}/{photo?}' , 'MasterController@HapusFotoUtilitas' )->name('hapusfotoutilitas');
 Route::post('/pgnmas/utilitas/{table?}/{id?}' , 'MasterController@PostEditSave')->name('PostEditSaveUtility');
+Route::get('/pgnmas/penilaian/draft/{id?}/' , 'AdminMnilaiController@getdraft')->name('getdraftnilai');
+Route::post('pgnmas/penilaian/edit_nilai/{id?}' , 'PenilaianSlaController@edit_nilai')->name('EditNilai');
+Route::get('/pgnmas/penilaian/send/{id?}' , 'PenilaianSlaController@send')->name('SendPenilaian');
+//-- 25 Jul 2020 13:49 --//
+Route::get('/pgnmas/penilaian/delete/{id}' , 'AdminMnilaiController@getdelete')->name('deletePenilaian');
