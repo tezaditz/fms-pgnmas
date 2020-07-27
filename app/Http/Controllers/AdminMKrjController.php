@@ -241,42 +241,15 @@
 	    */
 	    public function hook_query_index(&$query) {
 	        //Your code here
-			$useraset  = DB::table('user_aset')->where('user_id' , CRUDBooster::myId())->first();
-			if($useraset)
-			{
-				$asetid 	= $useraset->aset_id;
-				$wilayahid 	= $useraset->wilayah_id;
-				$areaid 	= $useraset->area_id;
-			}
+			$aset = [];
+			$useraset  = DB::table('user_aset')->where('user_id' , CRUDBooster::myId())->get();
+			foreach ($useraset as $key => $value) {
+				$aset[] = $value->aset_id;
+			};
 
-			if(CRUDBooster::myPrivilegeName() == 'Koordinator Area' || CRUDBooster::myPrivilegeName() == 'Leader')
-			{
-				$aset = [];
-				$data_aset = DB::table('aset')->where('area_id' , $areaid)->get();
-				foreach ($data_aset as $key => $value) {
-					$aset[] = $value->id;
-				}
+			$query->WhereIn('aset_id' , $aset);
 
-				$query->WhereIn('aset_id' , $aset);
-			}
-			else
-			{
-				$area = [];
-				$data_area = DB::table('area')->where('wilayah_id' , $wilayahid)->get();
-				foreach ($data_area as $key => $value) {
-					$area[] = $value->id;
-				}
-
-				$aset = [];
-				$data_aset = DB::table('aset')->WhereIn('area_id' , $area)->get();
-				foreach ($data_aset as $key => $value) {
-					$aset[] = $value->id;
-				}
-
-				$query->WhereIn('aset_id' , $aset);
-
-			}
-	    }
+		}
 
 	    /*
 	    | ---------------------------------------------------------------------- 
