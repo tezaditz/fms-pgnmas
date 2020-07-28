@@ -201,11 +201,11 @@
         <br>
         <br>
         <br>
-        {{ $SA->username }}
+        {{ $NamaSAH }}
         <br><br>
-        @if($master->status == 'DiSetujui')
+        @if($master->status == 'DISETUJUI')
         Status  : <strong>DiSetujui</strong> <br>
-        Tanggal : {{ date( 'd-M-Y H:i:s' , strtotime($master->tanggal_disetujui)) }}
+        Tanggal : {{ date( 'd-M-Y' , strtotime($master->tanggal_disetujui)) }}
         @endif
 
 

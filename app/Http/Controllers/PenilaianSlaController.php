@@ -121,7 +121,7 @@ class PenilaianSlaController extends Controller
             if(CRUDBooster::myPrivilegeId() == 11 || CRUDBooster::myPrivilegeId() == 7){
 
                 if($request->approve == 1){
-                    
+                    $this->update_master($id ,  $nilai['sedia'] , $nilai['maks']  , $nilai['persentase'] , $nilai['pencapaian'] , $request->catatan , null);
                     $this->update_status_master($id , 'DISETUJUI');
                     $this->create_history($id);
                 }else{
@@ -197,9 +197,18 @@ class PenilaianSlaController extends Controller
     }
 
     public function update_status_master($id , $status){
-        DB::table('m_penilaian')->where('id' , $id)->update([
-            'status'                    => $status
-        ]);
+
+        if($status == 'DISETUJUI'){
+            DB::table('m_penilaian')->where('id' , $id)->update([
+                'status'                    => $status,
+                'tanggal_disetujui'         => Carbon::now()
+            ]);
+        }else{
+            DB::table('m_penilaian')->where('id' , $id)->update([
+                'status'                    => $status
+            ]);
+        }
+        
     }
 
     public function simpan_sales(Request $request , $id)
@@ -263,9 +272,11 @@ class PenilaianSlaController extends Controller
                                             ->where('cms_users.id_cms_privileges' , 11)
                                             ->get();
             $jabatan = 'LFM';
+            $jabatan_ttd = "Legal Facility Management";
             $this->update_status_master($id , 'LFM');
             if(Count($SAH) == 0){
                 $jabatan = 'SALES AREA';
+                $jabatan_ttd = 'SALES AREA';
                 $SAH = DB::table('user_aset')->where('aset_id' , $master->aset_id )
                                             ->join('cms_users' , 'cms_users.id' , 'user_aset.user_id')
                                             ->where('cms_users.id_cms_privileges' , 7)
@@ -279,12 +290,12 @@ class PenilaianSlaController extends Controller
                 CRUDBooster::redirect($to,$message,$type);
             }else{
                 // kirim email
-                $this->update_status_master($id , 'SALES AREA');
+                $this->update_status_master($id , $jabatan);
                 foreach ($SAH as $key => $value) {
                     //kirim email ke LFM paling bawar ordernya
                     $data = [];
                     $data['nama_sa']    = $value->username;
-                    $data['jabatan']    = $jabatan;
+                    $data['jabatan']    = $jabatan_ttd;
                     $data['lokasi']     = $aset->nama . '(' . $aset->alamat . ')';
                     $data['pelaksanaan'] = $master->persentase_pelaksanaan . ' %';
                     $data['pencapaian'] = $master->pencapaian . ' %';
@@ -331,7 +342,7 @@ class PenilaianSlaController extends Controller
         $insert['persentase_pelaksanaan']  = $data->persentase_pelaksanaan;
         $insert['nilai_maksimum']          = $data->nilai_maksimum;
         $insert['pencapaian']              = $data->pencapaian;
-        $insert['catatan']                 = $catatan;
+        $insert['catatan']                 = $data->catatan;
         if($insert){
             DB::table('history_penilaian_sla')->insert($insert);
         }

@@ -8,7 +8,7 @@
 <script type="text/php">
       if (isset($pdf)) {
         $font = $fontMetrics->getFont("Arial", "bold");
-        $pdf->page_text(555, 970, "Page {PAGE_NUM}/{PAGE_COUNT}", $font, 7, array(0, 0, 0));
+        $pdf->page_text(505, 790, "Page {PAGE_NUM}/{PAGE_COUNT}", $font, 7, array(0, 0, 0));
       }
 </script>
 <div class="w3-container w3-row ">
@@ -47,7 +47,7 @@
 </table>
 
 <table border="1" class="w3-table w3-border w3-small">
- <tr>
+ <tr class="w3-dark-grey">
     
     <td rowspan="2" colspan="2"><p style="text-align: center;">URAIAN PEKERJAAN DAN LINGKUP KEGIATAN / SLA</p></td>
     <td rowspan="2"><p style="text-align: center;">Ketersediaan fasilitas (Ada / Tidak Ada)</p></td>
@@ -56,7 +56,7 @@
     <td rowspan="2"><p style="text-align: center;"> Keterangan</p></td>
   </tr>
   
-  <tr>
+  <tr class="w3-dark-grey">
     <td ><p style="text-align: center;">Dilaksanakan</p></td>
     <td ><p style="text-align: center;">Tidak Dilaksanakan</p></td>
     <td ><p style="text-align: center;">Baik<br />
@@ -66,17 +66,50 @@
     <td ><p style="text-align: center;">Kurang <br />
       (nilai =1)</p></td>
   </tr>
-  @foreach($sla as $data)
+  <?php
+    $lvl1 = '';$lvl2 = '';$lvl4 = 1;$lvl5 = 0;
+  ?>
+  @foreach($detail_penilaian as $dataPenilaian)
+      @if($lvl1 == '')
+        <tr class="w3-indigo">
+          <td colspan = 9>{{ $dataPenilaian->uLvl1 }}</td>
+        </tr>
+        <?php $lvl1 =  $dataPenilaian->uLvl1 ?>
+      @else
+        @if($lvl1 != $dataPenilaian->uLvl1)
+        <tr class="w3-indigo">
+          <td colspan = 9>{{ $dataPenilaian->uLvl1 }}</td>
+        </tr>
+        <?php $lvl1 =  $dataPenilaian->uLvl1 ?>
+        @endif
+      @endif
+      @if($lvl2 == '')
+        <tr class="w3-light-blue">
+          <td colspan = 9>{{ $dataPenilaian->uLvl2 }}</td>
+        </tr>
+        <?php $lvl2 =  $dataPenilaian->uLvl2 ?>
+      @else
+        @if($lvl2 != $dataPenilaian->uLvl2)
+        <tr class="w3-light-blue">
+          <td colspan = 9>{{ $dataPenilaian->uLvl2 }}</td>
+        </tr>
+        <?php $lvl2 =  $dataPenilaian->uLvl2 ?>
+        @endif
+      @endif
       
+      @if($dataPenilaian->GroupId != $lvl4)
+       
+        <tr class="w3-aqua">
+          <td colspan = 9>{{ $dataPenilaian->groupNm }}</td>
+        </tr>
+        <?php $lvl4 =  $dataPenilaian->GroupId ?>
+        
+      
+      @endif
       <tr>
-        <td colspan=9><strong>{{ $data->uraian }}</strong></td>
-      </tr>
-      @foreach($detail as $data_detail)
-          @if($data_detail->sla_id == $data->sla_id)
-          <tr>
-              <td colspan=2>{{ $data_detail->uraian }}</td>
-              <td class="w3-center">
-                  @if($data_detail->ketersediaan_fasilitas == 1)
+        <td colspan = 2>{{$dataPenilaian->uLvl3}}</td>
+        <td class="w3-center">
+                  @if($dataPenilaian->ketersediaan_fasilitas == 1)
                   Ada
                   @else
                   Tidak Ada
@@ -84,34 +117,33 @@
               </td>
               <td class="w3-center"> 
               <!-- Dilaksanakan -->
-                  @if($data_detail->dilaksanakan == 1)
+                  @if($dataPenilaian->dilaksanakan == 1)
                       v
                   @endif    
               </td>
               <td class="w3-center">
-                  @if($data_detail->dilaksanakan == 0)
+                  @if($dataPenilaian->dilaksanakan == 0)
                       v
                   @endif 
               </td>
               <td class="w3-center">
-                  @if($data_detail->sesuai == 3)
+                  @if($dataPenilaian->sesuai == 3)
                       v
                   @endif
               </td>
               <td class="w3-center">
-                  @if($data_detail->sesuai == 2)
+                  @if($dataPenilaian->sesuai == 2)
                       v
                   @endif
               </td>
               <td class="w3-center">
-                  @if($data_detail->sesuai == 1)
+                  @if($dataPenilaian->sesuai == 1)
                       v
                   @endif
               </td>
               <td class="w3-center"></td>
-          </tr>
-          @endif
-      @endforeach
+      </tr>
+
   @endforeach
 
   

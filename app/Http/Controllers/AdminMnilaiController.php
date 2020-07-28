@@ -553,22 +553,12 @@
 		{
 			set_time_limit(300);
 			ini_set('memory_limit', '700M');
-			// return $id;
+			
 			$data['master'] = DB::table('m_penilaian')->where('id' , $id)->first();
 			
-			// $data['detail'] = DB::table('detail_penilaian')->where('m_penilaian_id', $id)
-			// ->join('detail_sla' , 'detail_penilaian.detail_sla_id' , '=' , 'detail_sla.id')
-			// ->select('detail_penilaian.*' , 'detail_sla.uraian')
-			// ->get();
 			$data['sla'] = DB::table('sla')->where('tahun' , CRUDBooster::CurrYear())->get();
 			$data['detail']  = DB::table('detail_sla')->where('tahun' , CRUDBooster::CurrYear())->get();
-			// $data['detail_penilaian'] = DB::table('detail_penilaian')
-			// 							->join('detail_sla' , 'detail_sla.id' , 'detail_penilaian.detail_sla_id')
-			// 							->join('rincian_pekerjaan' , 'rincian_pekerjaan.id', 'detail_penilaian.rincian_pekerjaan_id')
-			// 							->join('group_sla' , 'group_sla.id' , 'detail_penilaian.group_sla_id')
-			// 							->where('detail_penilaian.m_penilaian_id' , $id)
-			// 							->select('detail_penilaian.id' , 'detail_penilaian.rincian_pekerjaan_id as rincian_pekerjaan_id' ,'rincian_pekerjaan.uraian as uraian' , 'detail_penilaian.group_sla_id as groupid' , 'detail_penilaian.detail_sla_id as detail_sla_id')
-			// 							->get();
+		
 			$data['detail_penilaian'] = DB::table('detail_penilaian')
 										->join('sla' , 'sla.id' , 'detail_penilaian.sla_id')
 										->join('detail_sla' , 'detail_sla.id' , 'detail_penilaian.detail_sla_id')
@@ -587,38 +577,35 @@
 			// return $data['period']->nama;
 			$data['aset']	= DB::table('aset')->where('id' , $data['master']->aset_id)->first();
 			$data['area']	= DB::table('area')->where('id' , $data['aset']->area_id)->first();
-			// $data['sla']    = DB::table('detail_penilaian')->where('m_penilaian_id' , $id)
-			// 											   ->join('sla' , 'detail_penilaian.sla_id' , '=' , 'sla.id')
-			// 											   ->select('detail_penilaian.sla_id' , 'sla.uraian')
-			// 											   ->groupby('detail_penilaian.sla_id' , 'sla.uraian')
-			// 											   ->get();
-			
+			// return $data['aset']->id;
 			$dataSla = DB::table('user_aset')->where('aset_id' , $data['aset']->id)->get(['user_id']);
 			foreach ($dataSla as $key => $value) {
 				$a[] = $value->user_id;
 			}
+			// return $a;
 			$data['SA'] = DB::table('cms_users')->whereIn('id' , $a)
 			->where('id_cms_privileges' , 7)		
 			->first();
+			// return $data['SA'];
 			$data['korea'] = DB::table('cms_users')->whereIn('id' , $a)
 			->where('id_cms_privileges' , 5)		
 			->first();
+
 			$c = substr($data['SA']->name , 0 , 2);
 			$data['jabatanSA'] = 'Sales Area Head';
 			if($c == 'LF'){
 				$data['jabatanSA'] = 'Logistic & Facility Management';
 			}
+			$data['NamaSAH']	= 'Santika Budhi Utami';
+			$data['jabatanSA']	= 'Dept. Head Facility Management';
+
 			$history = DB::table('history_penilaian_sla')
 				->where('id_m_penilaian' , $id)
 				->where('id_cms_users' , $data['korea']->id)
 				->first();
 			
 			$data['tanggal_kirim'] = $history->tanggal_approval;
-
-			
 			$pdf = App::make('dompdf.wrapper');
-			
-			
 			$paperorientation = 'landscape';
 			$papersize ='legal';
 			
