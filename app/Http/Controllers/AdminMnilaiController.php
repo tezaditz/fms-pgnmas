@@ -583,22 +583,26 @@
 				$a[] = $value->user_id;
 			}
 			// return $a;
-			$data['SA'] = DB::table('cms_users')->whereIn('id' , $a)
+			$Sales = DB::table('cms_users')->whereIn('id' , $a)
 			->where('id_cms_privileges' , 7)		
-			->first();
+			->count();
+
+			if($Sales != 0){
+				$Sales = DB::table('cms_users')->whereIn('id' , $a)
+				->where('id_cms_privileges' , 7)		
+				->first();
+
+				$data['jabatanSA'] = 'Sales Area Head';
+				$data['NamaSAH']	= $Sales->name;
+			}else{
+				$data['jabatanSA']	= 'Dept. Head Facility Management';
+				$data['NamaSAH']	= 'Santika Budhi Utami';
+			}
 			// return $data['SA'];
 			$data['korea'] = DB::table('cms_users')->whereIn('id' , $a)
 			->where('id_cms_privileges' , 5)		
 			->first();
-
-			$c = substr($data['SA']->name , 0 , 2);
-			$data['jabatanSA'] = 'Sales Area Head';
-			if($c == 'LF'){
-				$data['jabatanSA'] = 'Logistic & Facility Management';
-			}
-			$data['NamaSAH']	= 'Santika Budhi Utami';
-			$data['jabatanSA']	= 'Dept. Head Facility Management';
-
+			
 			$history = DB::table('history_penilaian_sla')
 				->where('id_m_penilaian' , $id)
 				->where('id_cms_users' , $data['korea']->id)
