@@ -18,6 +18,7 @@
                     <th>Persentase</th>
                     <th>Pencapaian</th>
                     <th>Catatan</th>
+                    <th>Action</th>
                 </tr>
             </thead>
             <tbody>
@@ -30,6 +31,9 @@
                         <td class="text-right">{{ number_format($dataHistory->persentase_pelaksanaan , 2 , "." , ',') }}</td>
                         <td class="text-right">{{ number_format($dataHistory->pencapaian, 2 , "." , ',') }}</td>
                         <td>{{ $dataHistory->catatan }}</td>
+                        <td>
+                            <a href="{{ route('getDetailHistory' , ['id' => $dataHistory->id_m_penilaian , 'userid' => $dataHistory->id_cms_users]) }}" class="btn btn-xs btn-primary"> <i class="fa fa-eye" aria-hidden="true"></i></a>
+                        </td>
                     </tr>
                 @endforeach
             </tbody>

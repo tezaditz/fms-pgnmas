@@ -96,8 +96,6 @@ class PenilaianSlaController extends Controller
             $data['laksana']    = $request->laksana;
             $data['sesuai']    = $request->sesuai;
 
-            // return $data['sesuai'];
-            // $nilai_sesuai = 0;
             foreach ($data['sedia'] as $key => $value) {
                 $dataketersediaan = DB::table('ketersediaan_sla')->where('id' , $key)->first();
                 // return $data['sesuai'][$key];
@@ -122,8 +120,31 @@ class PenilaianSlaController extends Controller
 
                 if($request->approve == 1){
                     $this->update_master($id ,  $nilai['sedia'] , $nilai['maks']  , $nilai['persentase'] , $nilai['pencapaian'] , $request->catatan , null);
-                    $this->update_status_master($id , 'DISETUJUI');
+                    // $this->update_status_master($id , 'DISETUJUI');
                     $this->create_history($id);
+                    // cek Penilaian LFM yg sudah masuk
+                    $a = DB::table('history_penilaian_sla')
+                                    ->join('cms_users' , 'cms_users.id' , 'history_penilaian_sla.id_cms_users')    
+                                    ->where('id_m_penilaian' , $id)
+                                    ->where('cms_users.id_cms_privileges' , 11)
+                                    ->groupby('id_cms_users')
+                                    ->select('id_cms_users')
+                                    ->get();
+                    // return Count($a);
+                    if(Count($a) == 6){
+                        // return 'OK';
+                        $dataMaster = DB::table('m_penilaian')->where('id' , $id)->first();
+                        $rata2nilai = DB::table('history_penilaian_sla')
+                                                ->where('id_m_penilaian' , $id)
+                                                ->select(DB::raw('AVG(pencapaian) as AvgNilai'))
+												->first();
+			
+                        $this->update_master($id , $dataMaster->ketersediaan_fasilitas , $dataMaster->nilai_maksimum  , $dataMaster->persentase_pelaksanaan , $rata2nilai->AvgNilai , '' , null);
+                        $this->update_status_master($id , 'LFM (Lengkap)');
+                    }
+
+
+                    // $this->create_history($id);
                 }else{
                     // return 'a';
                     $this->update_master($id ,  $nilai['sedia'] , $nilai['maks']  , $nilai['persentase'] , $nilai['pencapaian'] , $request->catatan , null);
@@ -131,10 +152,7 @@ class PenilaianSlaController extends Controller
                     $this->create_history($id);
                 }
                 
-            }
-            
-        
-
+            }     
 
             $to = '/pgnmas/penilaian/draft/' . $id;
             $message = 'Form Nilai berhasil ditambahkan , Silakan Periksa Kembali Pekerjaan Anda';

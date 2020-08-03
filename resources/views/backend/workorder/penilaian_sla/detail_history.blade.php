@@ -18,6 +18,7 @@
                     <th>Persentase</th>
                     <th>Pencapaian</th>
                     <th>Catatan</th>
+                    
                 </tr>
             </thead>
             <tbody>
@@ -30,6 +31,7 @@
                         <td class="text-right">{{ number_format($dataHistory->persentase_pelaksanaan , 2 , "." , ',') }}</td>
                         <td class="text-right">{{ number_format($dataHistory->pencapaian, 2 , "." , ',') }}</td>
                         <td>{{ $dataHistory->catatan }}</td>
+                        
                     </tr>
                 @endforeach
             </tbody>

@@ -99,6 +99,7 @@ class AdminController extends CBController
             Session::put('theme_color', $priv->theme_color);
             Session::put("appname", CRUDBooster::getSetting('appname'));
             Session::put('current_year' , $year );
+            Session::put('loginby' , 'webform');
 
             CRUDBooster::insertLog(trans("crudbooster.log_login", ['email' => $users->email, 'ip' => Request::server('REMOTE_ADDR')]));
 

@@ -34,6 +34,7 @@
 			$this->col[] = ["label"=>"Tahun","name"=>"tahun"];
 			$this->col[] = ["label"=>"Sla","name"=>"sla_id","join"=>"sla,uraian"];
 			$this->col[] = ["label"=>"Detail Sla","name"=>"detail_sla_id","join"=>"detail_sla,uraian"];
+			$this->col[] = ["label"=>"Rincian Pekerjaan","name"=>"rincian_pekerjaan_id","join"=>"rincian_pekerjaan,uraian"];
 			# END COLUMNS DO NOT REMOVE THIS LINE
 
 			# START FORM DO NOT REMOVE THIS LINE
@@ -64,7 +65,7 @@
 	        | 
 	        */
 	        $this->sub_module = array();
-			$this->sub_module[] = ['label'=>'Detail','path'=>'sub_detail_pekerjaan','parent_columns'=>'sla_uraian,detail_sla_uraian','foreign_key'=>'detail_pekerjaan_id','button_color'=>'success','button_icon'=>'fa fa-bars'];
+			$this->sub_module[] = ['label'=>'Detail','path'=>'sub_detail_pekerjaan','parent_columns'=>'sla_uraian,detail_sla_uraian,rincian_pekerjaan_uraian','foreign_key'=>'detail_pekerjaan_id','button_color'=>'success','button_icon'=>'fa fa-bars'];
 
 	        /* 
 	        | ---------------------------------------------------------------------- 

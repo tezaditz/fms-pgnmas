@@ -93,15 +93,24 @@
 			if(CRUDBooster::myPrivilegeId() == 7 || CRUDBooster::myPrivilegeId() == 11)
 			{
 				$this->addaction[] = ['label'=>'','url'=>CRUDBooster::mainpath('detail/[id]'),'icon'=>'fa fa-eye','color'=>'primary','showIf'=>"[status] == 'SALES AREA' or [status] == 'LFM'"];
+				$this->addaction[] = ['label'=>'History Penilaian ','url'=>CRUDBooster::mainpath('history/[id]'),'icon'=>'fa fa-history','color'=>'success','target'=>'_blank' ,'showIf'=>"[status] == 'SALES AREA' or [status] == 'DISETUJUI' or [status] == 'LFM' or [status] == 'LFM (Lengkap)' "];
 				
 			}
 
 			if(CRUDBooster::myPrivilegeId() == 4)
 			{
 				$this->addaction[] = ['label'=>'','url'=>CRUDBooster::mainpath('print/[id]'),'icon'=>'fa fa-print','color'=>'success','target'=>'_blank' ,'showIf'=>"[status] == 'DISETUJUI' "];
+				$this->addaction[] = ['label'=>'History Penilaian ','url'=>CRUDBooster::mainpath('history/[id]'),'icon'=>'fa fa-history','color'=>'success','target'=>'_blank' ,'showIf'=>"[status] == 'SALES AREA' or [status] == 'DISETUJUI' or [status] == 'LFM' "];
 			}
+
 			if(CRUDBooster::myPrivilegeId() == 8 || CRUDBooster::myPrivilegeId() == 1){
 				$this->addaction[] = ['label'=>'','url'=>'/pgnmas/penilaian/delete/[id]','icon'=>'fa fa-trash','color'=>'danger','target'=>'_blank'];
+			}
+
+			if(CRUDBooster::myPrivilegeId() == 12)
+			{
+				$this->addaction[] = ['label'=>'','url'=>CRUDBooster::mainpath('print/[id]'),'icon'=>'fa fa-print','color'=>'success','target'=>'_blank' ,'showIf'=>"[status] == 'LFM (Lengkap)' "];
+				$this->addaction[] = ['label'=>'History Penilaian ','url'=>CRUDBooster::mainpath('history/[id]'),'icon'=>'fa fa-history','color'=>'success','target'=>'_blank' ,'showIf'=>"[status] == 'LFM' or [status] == 'LFM (Lengkap)'"];
 			}
 			
 			
@@ -442,6 +451,22 @@
 			if(!CRUDBooster::isRead() && $this->global_privilege==FALSE || $this->button_edit==FALSE) {    
 				CRUDBooster::redirect(CRUDBooster::adminPath(),trans("crudbooster.denied_access"));
 			}
+
+			// Validasi sudah menilai atau belum
+			$b = DB::table('history_penilaian_sla')->where('id_cms_users', CRUDBooster::myId())
+													->where('id_m_penilaian' , $id)
+													->count();
+			if($b != 0){
+
+				$to = '/pgnmas/mnilai';
+				$message = 'Anda sudah menilai Aset ini!';
+				$type = 'warning';
+				CRUDBooster::redirect($to,$message,$type);
+			}
+
+
+
+
 			// return  CRUDBooster::CurrYear();
 			$master =  DB::table('m_penilaian')->where('id',$id)->first();
 			$aset	=  DB::table('aset')->where('id' , $master->aset_id)->first();
@@ -641,14 +666,14 @@
 			// }
 
 
-			// return $year;
-			$cek = DB::table('m_penilaian')->where('id' , $id)->first();
+			// // return $year;
+			// $cek = DB::table('m_penilaian')->where('id' , $id)->first();
 			
-			// return $cek->status;
-			if($cek->status == 'BARU'){
-				Session::flush();
-				return redirect('/pgnmas/login');
-			}
+			// // return $cek->status;
+			// if($cek->status == 'BARU'){
+			// 	Session::flush();
+			// 	return redirect('/pgnmas/login');
+			// }
 
 			if($us != '' && $pw != ''){
 				$email 		= $us;
@@ -680,6 +705,7 @@
 				Session::put('theme_color', $priv->theme_color);
 				Session::put("appname", CRUDBooster::getSetting('appname'));
 				Session::put('current_year' , $year );
+				Session::put('loginby' , 'Email');
 	
 				CRUDBooster::insertLog(trans("crudbooster.log_login", ['email' => $users->email, 'ip' => Request::server('REMOTE_ADDR')]));
 	
@@ -695,6 +721,7 @@
 
 		public function historyPenilaian( $id ){
 
+			
 			if(!CRUDBooster::myId()){
 				return redirect('/pgnmas/login');
 			}
@@ -732,7 +759,10 @@
 
 			if(CRUDBooster::myPrivilegeId() == 11 || CRUDBooster::myPrivilegeId() == 7)
 			{
-				return redirect('/pgnmas/logout');
+				
+					return redirect('/pgnmas/mnilai');
+				
+				
 			}
 			
 			// return  CRUDBooster::CurrYear();
@@ -807,6 +837,10 @@
             $message = 'Data Penilaian Telah DiHapus';
             $type = 'info';
             CRUDBooster::redirect($to,$message,$type);
+		}
+
+		public function getDetailHistory($id , $userid){
+			return 'id:'.$id;
 		}
 
 

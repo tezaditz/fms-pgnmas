@@ -234,9 +234,9 @@ class MySqlController extends \crocodicstudio\crudbooster\controllers\CBControll
                 foreach ($tab as $key => $value) {
                     $label = $value;
     
-                    if (substr($value, 0, 4) == 'cms_') {
-                        continue;
-                    }
+                    // if (substr($value, 0, 4) == 'cms_') {
+                    //     continue;
+                    // }
     
                     $tables_list[] = $value;
                 }
@@ -320,6 +320,7 @@ class MySqlController extends \crocodicstudio\crudbooster\controllers\CBControll
         $file = $request->file('file');
         $tujuan_upload = $request->input('pathFile');
         // return $tujuan_upload;
+        
         $file->move($tujuan_upload,$file->getClientOriginalName());
         
 

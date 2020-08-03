@@ -56,6 +56,6 @@ class AdminCmsUsersController extends \crocodicstudio\crudbooster\controllers\CB
 		unset($postdata['password_confirmation']);
 	}
 	public function hook_before_add(&$postdata) {      
-	    unset($postdata['password_confirmation']);
+		unset($postdata['password_confirmation']);
 	}
 }

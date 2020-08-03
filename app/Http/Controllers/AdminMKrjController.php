@@ -242,7 +242,7 @@
 	    public function hook_query_index(&$query) {
 			//Your code here
 			$aset = [];
-			$useraset  = DB::table('user_aset')->where('user_id' , CRUDBooster::myId())->first();
+			$useraset  = DB::table('user_aset')->where('user_id' , CRUDBooster::myId())->get();
 			foreach ($useraset as $key => $value) {
 				$aset[] = $value->aset_id;
 			}
@@ -269,7 +269,21 @@
 	    |
 	    */
 	    public function hook_before_add(&$postdata) {        
-	        //Your code here
+			//Your code here
+			$ketersediaan = DB::table('ketersediaan_sla')
+										->where('aset_id' , $postdata['aset_id'])
+										->where('tahun' , crudbooster::curryear())
+										->get();
+			
+			if(Count($ketersediaan) == 0){
+				$to = '/pgnmas/m_krj';
+				$message = 'Tidak tersedia SLA pada aset,Silahkan cek kembali ketersediaan SLA pada aset tersebut';
+				$type = 'info';
+				CRUDBooster::redirect($to,$message,$type);
+			}
+
+
+
 			$aset = DB::table('aset')->where('id' , $postdata['aset_id'])->first();
 
 			$postdata['aset_name'] = $aset->nama;
@@ -288,7 +302,14 @@
 	    public function hook_after_add($id) {        
 			//Your code here
 			$data = DB::table('m_pekerjaan')->where('id' , $id)->first();
-			$sla = DB::table('sla_aset')->where('aset_id' , $data->aset_id)->get();
+			$masterSla = DB::table('sla')->where('tahun' , CRUDBooster::CurrYear())->get(['id']);
+			$slaid = [];
+			foreach ($masterSla as $key => $value) {
+				$slaid[] = $value->id;
+			}
+			$sla = DB::table('sla_aset')->where('aset_id' , $data->aset_id)
+										->whereIn('sla_id' , $slaid)
+										->get();
 
 			
 				// DB::table('parameter')->where('id' , '!=' , 1)->delete();
@@ -302,13 +323,19 @@
 					foreach ($ketersediaan as $key2 => $value2) {
 						$sla = DB::table('sla')->where('id' , $value->sla_id)->first();
 						$detail = DB::table('detail_sla')->where('id' , $value2->detail_sla_id)->first();
+						$rincian = DB::table('rincian_pekerjaan')->where('id' , $value2->rincian_pekerjaan_id)->first();
+						$group = DB::table('group_sla')->where('id' , $value2->group_sla_id)->first();
 
-						$insert['tahun']			= CRUDBooster::CurrYear();
-						$insert['m_pekerjaan_id']	= $id;
-						$insert['sla_id']			= $value->sla_id;
-						$insert['detail_sla_id']	= $value2->detail_sla_id;
+						$insert['tahun']				= CRUDBooster::CurrYear();
+						$insert['m_pekerjaan_id']		= $id;
+						$insert['sla_id']				= $value->sla_id;
+						$insert['detail_sla_id']		= $value2->detail_sla_id;
+						$insert['group_sla_id']			= $value2->group_sla_id;
+						$insert['rincian_pekerjaan_id']	= $value2->rincian_pekerjaan_id;
 						$insert['sla_uraian']			= $sla->uraian;
 						$insert['detail_sla_uraian']	= $detail->uraian;
+						$insert['rincian_pekerjaan_uraian']	= $rincian->uraian;
+						$insert['group_sla_uraian']	= $group->uraian;
 
 						$jadwal = DB::table('master_jadwal_sla')->where('sla_id' , $value->sla_id)
 																->where('detail_sla_id' , $value2->detail_sla_id )
@@ -393,6 +420,7 @@
 
 		public function getAdd()
 		{
+			
 			if(!CRUDBooster::isCreate() && $this->global_privilege==FALSE || $this->button_add==FALSE) {    
 				CRUDBooster::redirect(CRUDBooster::adminPath(),trans("crudbooster.denied_access"));
 			  }

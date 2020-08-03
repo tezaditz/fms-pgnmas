@@ -565,4 +565,80 @@
 			$this->cbView('backend.utilitas.air.edit',$data);
 		}
 
+		public function getFormAdd($id = null , $asetid = null , $period = null)
+		{
+			$user_aset = DB::table('user_aset')->where('user_id' , CRUDBooster::MyId())->get();
+			foreach ($user_aset as $key => $value) {
+				$aset[] = $value->aset_id;
+			}
+			$data = [];
+			$data['page_title'] = 'Tambah Data';
+			$data['bulan'] = DB::table('bulan')->get();
+			$aset = DB::table('aset')->whereIn('id' , $aset)->get();
+			$data['aset'] 		= $aset;
+
+			$a = [];
+			$b = [];
+			foreach ($aset as $key => $value) {
+				$b = DB::table('detail_utility')->where('aset_id' , $value->id)->get();
+				foreach ($b as $key2 => $value2) {
+					$a[] = $value2->id;
+					$b[] = $value2->pilih_foto;
+				}
+			}
+			// return $a;
+			$data['period'] = $period;
+			$data['asetid'] = $asetid;
+			$data['meteran'] = $a;
+			$data['pilih_foto'] = $b;
+			$this->cbView('backend.utilitas.air.add2',$data);
+		}
+
+		public function hapus_foto($id , $foto)
+		{
+			// return $foto;
+			if($foto == 'before'){
+				DB::table('detail_utility')->where('id' , $id)
+										->update(['foto_sebelum' => null]);
+			}
+			if($foto == 'after'){
+				DB::table('detail_utility')->where('id' , $id)
+										->update(['foto_sesudah' => null]);
+			}
+			
+			$detaliutilitas = DB::table('detail_utility')->where('id' , $id)
+								->first();
+			
+			$asetid = $detaliutilitas->aset_id;
+			$period = $detaliutilitas->periode;
+
+			$to = '/pgnmas/air/'.$id.'/edit';
+			// return $to;
+			$message = '';
+			$type = 'info';
+			CRUDBooster::redirect($to,$message,$type);
+		}
+	    //By the way, you can still create your own method in here... :) 
+
+		public function UpdateFoto($id){
+			$a = DB::table('detail_utility')->where('id' , $id)->first();
+
+			DB::table('detail_utility')->where('tahun' , CRUDBooster::CurrYear())
+				->where('periode' , $a->periode)
+				->where('aset_id' , $a->aset_id)
+				->where('jenis' , $a->jenis)
+				->update(['pilih_foto' => 0]);
+			
+			DB::table('detail_utility')->where('id' , $id)->update(['pilih_foto'=>1]);
+
+
+			DB::table('master_air')->where('tahun' , CRUDBooster::CurrYear())
+								   ->where('period' , $a->periode)
+								   ->where('aset_id' , $a->aset_id)
+								   ->where('jenis' , $a->jenis)
+								   ->update(['foto_before' => $a->foto_sebelum , 
+												'foto_after' => $a->foto_sesudah]);
+			
+		}
+
 	}

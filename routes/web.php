@@ -91,3 +91,20 @@ Route::post('pgnmas/penilaian/edit_nilai/{id?}' , 'PenilaianSlaController@edit_n
 Route::get('/pgnmas/penilaian/send/{id?}' , 'PenilaianSlaController@send')->name('SendPenilaian');
 //-- 25 Jul 2020 13:49 --//
 Route::get('/pgnmas/penilaian/delete/{id}' , 'AdminMnilaiController@getdelete')->name('deletePenilaian');
+
+//meter id
+Route::get('/pgnmas/getdetailutility' , 'AdminWatermeterController@detailUtility')->name('getdetailUtility');
+Route::get('/pgnmas/getmeterid/{utility}/{asetid}/{period}' ,  'AdminWatermeterController@getmeterid')->name('getmeterid');
+Route::get('/pgnmas/air/{id}/edit' , 'AdminAirController@edit_laporan')->name('editlaporan_air');
+Route::post('/pgnmas/simpandetailmeter' , 'AdminAirController@simpandetail')->name('simpandetailair');
+Route::get('/pgnmas/getmeterid/add/{utility}/{asetid}/{period}' ,  'AdminAirController@getformadd')->name('getformadd');
+Route::get('/pgnmas/getmenterid/delete/{id}/{foto}/photo' , 'AdminAirController@hapus_foto')->name('hapusFoto');
+Route::get('/pgnmas/updatefoto/{id}/foto' , 'AdminAirController@UpdateFoto')->name('UpdateFotoMaster');
+
+//meter listrik
+Route::get('/pgnmas/getmeterid/{utility}/{asetid}/{period}' ,  'AdminWatermeterController@getmeterid')->name('getmeterid');
+Route::get('/pgnmas/listrik/{id}/edit' , 'AdminMeterListrikController@edit_laporan')->name('editlaporan_air');
+Route::post('/pgnmas/simpandetailmeterlistrik' , 'AdminMeterListrikController@simpandetail')->name('simpandetaillistrik');
+
+// history penilaian
+Route::get('/pgnmas/detail_history_penilaian/{id?}/{userid?}' , 'AdminMnilaiController@getDetailHistory')->name('getDetailHistory');

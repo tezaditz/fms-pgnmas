@@ -34,9 +34,17 @@
 			$this->col[] = ["label"=>"Meter Id","name"=>"meter_id"];
 			# END COLUMNS DO NOT REMOVE THIS LINE
 
+
+
+			$aset = [];
+			$user_aset = DB::table('user_aset')->where('user_id' , CRUDBooster::MyId())->get();
+			foreach ($user_aset as $key => $value) {
+				$aset[] = $value->aset_id;
+			}
+
 			# START FORM DO NOT REMOVE THIS LINE
 			$this->form = [];
-			$this->form[] = ['label'=>'Aset','name'=>'aset_id','type'=>'select','validation'=>'required|integer|min:0','width'=>'col-sm-10','dataquery'=>'select aset.id as value , aset.nama as label from aset join user_aset on aset.id = user_aset.aset_id where user_aset.user_id = 1'];
+			$this->form[] = ['label'=>'Aset','name'=>'aset_id','type'=>'select','validation'=>'required|integer|min:0','width'=>'col-sm-10','dataquery'=>'select aset.id as value , aset.nama as label from aset join user_aset on aset.id = user_aset.aset_id where user_aset.user_id ='. CRUDBooster::myId() .'' ];
 			$this->form[] = ['label'=>'Meter Id','name'=>'meter_id','type'=>'text','validation'=>'required|min:1|max:255','width'=>'col-sm-10'];
 			# END FORM DO NOT REMOVE THIS LINE
 
