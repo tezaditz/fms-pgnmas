@@ -114,7 +114,7 @@ class PenilaianSlaController extends Controller
             }
 
                 $nilai = $this->hitung($id);
-            // return $nilai;
+            $master = DB::table('m_penilaian')->where('id' , $id)->first();
             $this->update_master($id ,  $nilai['sedia'] , $nilai['maks']  , $nilai['persentase'] , $nilai['pencapaian'] , '' , null);
             if(CRUDBooster::myPrivilegeId() == 11 || CRUDBooster::myPrivilegeId() == 7){
 
@@ -123,25 +123,30 @@ class PenilaianSlaController extends Controller
                     // $this->update_status_master($id , 'DISETUJUI');
                     $this->create_history($id);
                     // cek Penilaian LFM yg sudah masuk
-                    $a = DB::table('history_penilaian_sla')
-                                    ->join('cms_users' , 'cms_users.id' , 'history_penilaian_sla.id_cms_users')    
-                                    ->where('id_m_penilaian' , $id)
-                                    ->where('cms_users.id_cms_privileges' , 11)
-                                    ->groupby('id_cms_users')
-                                    ->select('id_cms_users')
-                                    ->get();
-                    // return Count($a);
-                    if(Count($a) == 6){
-                        // return 'OK';
-                        $dataMaster = DB::table('m_penilaian')->where('id' , $id)->first();
-                        $rata2nilai = DB::table('history_penilaian_sla')
-                                                ->where('id_m_penilaian' , $id)
-                                                ->select(DB::raw('AVG(pencapaian) as AvgNilai'))
-												->first();
-			
-                        $this->update_master($id , $dataMaster->ketersediaan_fasilitas , $dataMaster->nilai_maksimum  , $dataMaster->persentase_pelaksanaan , $rata2nilai->AvgNilai , '' , null);
-                        $this->update_status_master($id , 'LFM (Lengkap)');
+                    if($master->status == 'LFM'){
+                        $a = DB::table('history_penilaian_sla')
+                        ->join('cms_users' , 'cms_users.id' , 'history_penilaian_sla.id_cms_users')    
+                        ->where('id_m_penilaian' , $id)
+                        ->where('cms_users.id_cms_privileges' , 11)
+                        ->groupby('id_cms_users')
+                        ->select('id_cms_users')
+                        ->get();
+        
+                        if(Count($a) == 6){
+                            // return 'OK';
+                            $dataMaster = DB::table('m_penilaian')->where('id' , $id)->first();
+                            $rata2nilai = DB::table('history_penilaian_sla')
+                                                    ->where('id_m_penilaian' , $id)
+                                                    ->select(DB::raw('AVG(pencapaian) as AvgNilai'))
+                                                    ->first();
+
+                            $this->update_master($id , $dataMaster->ketersediaan_fasilitas , $dataMaster->nilai_maksimum  , $dataMaster->persentase_pelaksanaan , $rata2nilai->AvgNilai , '' , null);
+                            $this->update_status_master($id , 'LFM (Lengkap)');
+                        }
+                    }elseif($master->status == 'SALES AREA'){
+                        $this->update_status_master($id , 'DISETUJUI');
                     }
+                   
 
 
                     // $this->create_history($id);
@@ -383,6 +388,15 @@ class PenilaianSlaController extends Controller
             }
         }
 
+    }
+
+    public function lfmsetuju($id){
+        $this->update_status_master($id , 'DISETUJUI');
+
+        $to = '/pgnmas/mnilai';
+        $message = 'Penilaian Telah DiSetujui';
+        $type = 'info';
+        CRUDBooster::redirect($to,$message,$type);
     }
 
 }

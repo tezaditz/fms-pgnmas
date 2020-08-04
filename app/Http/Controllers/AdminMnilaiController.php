@@ -92,6 +92,7 @@
 			}
 			if(CRUDBooster::myPrivilegeId() == 7 || CRUDBooster::myPrivilegeId() == 11)
 			{
+				$this->addaction[] = ['label'=>'','url'=>CRUDBooster::mainpath('print/[id]'),'icon'=>'fa fa-print','color'=>'success','target'=>'_blank' ,'showIf'=>"[status] == 'SALES AREA' or [status] == 'DISETUJUI' or [status] == 'LFM' "];
 				$this->addaction[] = ['label'=>'','url'=>CRUDBooster::mainpath('detail/[id]'),'icon'=>'fa fa-eye','color'=>'primary','showIf'=>"[status] == 'SALES AREA' or [status] == 'LFM'"];
 				$this->addaction[] = ['label'=>'History Penilaian ','url'=>CRUDBooster::mainpath('history/[id]'),'icon'=>'fa fa-history','color'=>'success','target'=>'_blank' ,'showIf'=>"[status] == 'SALES AREA' or [status] == 'DISETUJUI' or [status] == 'LFM' or [status] == 'LFM (Lengkap)' "];
 				
@@ -109,7 +110,8 @@
 
 			if(CRUDBooster::myPrivilegeId() == 12)
 			{
-				$this->addaction[] = ['label'=>'','url'=>CRUDBooster::mainpath('print/[id]'),'icon'=>'fa fa-print','color'=>'success','target'=>'_blank' ,'showIf'=>"[status] == 'LFM (Lengkap)' "];
+				$this->addaction[] = ['label'=>'','url'=>'/pgnmas/penilaian/lfm/[id]/setuju','icon'=>'fa fa-check-square','color'=>'info','showIf'=>"[status] == 'LFM (Lengkap)'",'confirmation'=>true ];
+				$this->addaction[] = ['label'=>'','url'=>CRUDBooster::mainpath('print/[id]'),'icon'=>'fa fa-print','color'=>'success','target'=>'_blank' ,'showIf'=>"[status] == 'LFM (Lengkap)' or [status] == 'DISETUJUI'"];
 				$this->addaction[] = ['label'=>'History Penilaian ','url'=>CRUDBooster::mainpath('history/[id]'),'icon'=>'fa fa-history','color'=>'success','target'=>'_blank' ,'showIf'=>"[status] == 'LFM' or [status] == 'LFM (Lengkap)'"];
 			}
 			
@@ -840,9 +842,64 @@
 		}
 
 		public function getDetailHistory($id , $userid){
-			return 'id:'.$id;
+			// return  CRUDBooster::CurrYear();
+			$master =  DB::table('history_penilaian_sla')->where('id_m_penilaian',$id)
+			->where('id_cms_users' , $userid)											
+			->first();
+			// $master_penilaian = DB::table('m')
+			$aset	=  DB::table('aset')->where('id' , $master->aset_id)->first();
+			// return $master;
+			$data = [];
+			$data['page_title'] = 'History Penilaian SLA';
+			$data['row'] = $master;
+			$data['aset'] = $aset;
+			$data['sla'] = DB::table('sla')->where('tahun' , CRUDBooster::CurrYear())->get();
+			// return $data['sla'];
+			$data['detail'] = DB::table('detail_sla')
+										->where('tahun' , CRUDBooster::CurrYear())->get();
+
+			$data['detail_penilaian']  = DB::table('detail_history_penilaian')
+										->join('m_penilaian' , 'm_penilaian.id' , 'detail_history_penilaian.m_penilaian_id')
+										->join('sla' , 'sla.id', 'detail_history_penilaian.sla_id')
+										->join('detail_sla' , 'detail_sla.id', 'detail_history_penilaian.detail_sla_id')
+										->join('rincian_pekerjaan' , 'rincian_pekerjaan.id', 'detail_history_penilaian.rincian_pekerjaan_id')
+										->where('detail_history_penilaian.m_penilaian_id' , $id)
+										->where('m_penilaian.tahun' , CRUDBooster::CurrYear())
+										->where('detail_history_penilaian.user_id' , $userid)
+										->select(
+											'detail_history_penilaian.id as id',
+											'detail_history_penilaian.sla_id as slaid',
+											'detail_history_penilaian.detail_sla_id as detailslaid',
+											'detail_history_penilaian.rincian_pekerjaan_id as rincianid',
+											'sla.uraian as slaU',
+											'detail_sla.uraian as detailslaU',
+											'rincian_pekerjaan.uraian as rinciU',
+											'detail_history_penilaian.ketersediaan_fasilitas as sedia',
+											'detail_history_penilaian.dilaksanakan as laksana',
+											'detail_history_penilaian.sesuai as sesuai'
+											)
+										->get();
+
+
+			$data['sedia'] = DB::table('ketersediaan_sla')
+							->where('aset_id' , $master->aset_id)
+							->where('tahun' , CRUDBooster::CurrYear())
+							->get();
+			// return $data['sedia'];
+			$data['id'] = $id;		
+			$data['pembuat'] = DB::table('history_penilaian_sla')->where('id_m_penilaian' , $id)->first();
+			$data['user']	= DB::table('cms_users')->where('id' , $data['pembuat']->id_cms_users)->first();
+			$data['rules'] = DB::table('cms_privileges')->where('id' , $data['user']->id_cms_privileges)->first();
+			
+
+
+
+			// return $data;
+			//Please use cbView method instead view method from laravel
+			$this->cbView('backend.workorder.penilaian_sla.detail_history',$data);
 		}
 
+	
 
 	    //By the way, you can still create your own method in here... :) 
 

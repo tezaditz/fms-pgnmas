@@ -58,7 +58,7 @@
         <label class='control-label col-sm-2'>Path View
         </label>
         <div class="col-sm-10">
-        <input type='text' id="path_for_view" title="pathFile" required   class='form-control' name="path_for_view" value= "{{ resource_path() }}"/>
+        <input type='text' id="path_for_view" title="pathFile"    class='form-control' name="path_for_view" value= "{{ resource_path() }}"/>
         </div>
     </div>
 
@@ -66,7 +66,7 @@
         <label class='control-label col-sm-2'>File Update View
         </label>
         <div class="col-sm-10">
-        <input type='file' id="file_for_view" title="file_for_view" required   class='form-control' name="file_for_view" multiple/>
+        <input type='file' id="file_for_view" title="file_for_view"    class='form-control' name="file_for_view" multiple/>
         </div>
     </div>
     <input type="submit" name="submit" value='Save' class='btn btn-success'>

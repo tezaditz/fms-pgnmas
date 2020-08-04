@@ -196,7 +196,7 @@
     <div class="w3-container  w3-cell">
       <div class="w3-center">
         Menyetujui, <br>
-        {{ $jabatanSA }} Area {{ $area->uraian }} <br>
+        {{ $jabatanSA }} <br>
         
         <br>
         <br>
