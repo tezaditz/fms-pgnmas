@@ -16,9 +16,9 @@
         "lcobucci/jwt": "^3.2",
         "league/flysystem-aws-s3-v3": "^1.0",
         "nesbot/carbon": "1.26.3",
-        "phpoffice/phpspreadsheet": "^1.12",
+        "phpoffice/phpexcel": "^1.8",
         "tymon/jwt-auth": "1.0.0-rc.4.1",
-        "unisharp/laravel-filemanager": "^2.1",
+        "unisharp/laravel-filemanager": "^1.7.7",
         "yajra/laravel-datatables-oracle": "~8.0"
     },
     "require-dev": {

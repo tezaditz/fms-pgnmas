@@ -57,9 +57,10 @@ Route::get('/pgnmas/mnilai/print/{id}' , 'AdminMnilaiController@print')->name('p
 //dokumentasi
 Route::get('/pgnmas/dok_complain/print/{id}' , 'AdminDokComplainController@print')->name('PrintComplain');
 Route::get('/pgnmas/photo_rutin/getDetailSLA/{id}' , 'AdminPhotoRutinController@getDetailSla')->name('PhotoRutinGetDetailSla');
-Route::get('/pgnmas/photo_rutin/cari/{aset_id}/{sla_id}/{detail_sla_id}/{period}' , 'AdminPhotoRutinController@cari_data')->name('PhotoRutinFindData');
+Route::get('/pgnmas/photo_rutin/getRincianPekerjaan/{id}' , 'AdminPhotoRutinController@getRincianPekerjaan')->name('PhotoRutingetRincianPekerjaan');
+Route::get('/pgnmas/photo_rutin/cari/{aset_id?}/{sla_id?}/{detail_sla_id?}/{rinci_id?}/{period}' , 'AdminPhotoRutinController@cari_data')->name('PhotoRutinFindData');
 Route::get('/pgnmas/photo_rutin/print/{id}' , 'AdminPhotoRutinController@print')->name('PrintRutin');
-
+Route::get('/pgnmas/photo_rutin/print/{id?}/excel' , 'AdminPhotoRutinController@create_excel')->name('PrintRutintoExcel');
 Route::get('/pgnmas/loginfromemail/{us}/{pw}/{id}/{year}' , 'AdminMnilaiController@loginfromemail');
 
 Route::get('/pgnmas/mnilai/history/{id?}' , 'AdminMnilaiController@historyPenilaian')->name('HistoryPenilaian');
@@ -70,6 +71,8 @@ Route::get('/pgnmas/slareport' , 'ReportController@getLaporanSLA')->name('Report
 Route::post('/pgnmas/slareport' , 'ReportController@postLaporanSLA')->name('PostReportSLA');
 Route::get('/pgnmas/utilitasReport' , 'ReportController@getLaporanUti')->name('ReportUti');
 Route::post('/pgnmas/utilitasReport' , 'ReportController@postLaporanUti')->name('PostReportUti');
+
+Route::post('/pgnmas/slareport/exportToexcel' , 'ReportController@exportToexcel')->name('ExportToExcel_reportSLA');
 
 
 

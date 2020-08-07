@@ -45,7 +45,20 @@
                         <option value="2">Juli s.d Desember</option>
                     </select>
                 </div>
-          </div>
+            </div>
+            <div class='form-group header-group-0 ' id='form-group-period' style="">
+                <label class='control-label col-sm-2 text-right'>Format File
+                        <span class='text-danger' title='This field is required'>*</span>
+                </label>
+                <div class="col-sm-10">
+                <div class="radio">
+                    <label><input type="radio" name="optformat" value="pdf" checked>PDF</label>
+                </div>
+                <div class="radio">
+                    <label><input type="radio" name="optformat" value="excel">Excel</label>
+                </div>
+                </div>
+            </div>
     </div>
     <div class="panel-footer text-center">
         <a href="" class="btn btn-sm btn-default"><i class="fa fa-chevron-circle-left" aria-hidden="true"></i> Kembali</a>

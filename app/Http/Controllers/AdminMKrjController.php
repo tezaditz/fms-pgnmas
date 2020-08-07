@@ -247,7 +247,8 @@
 				$aset[] = $value->aset_id;
 			}
 
-			$query->whereIn('aset_id' , $aset);
+			$query->whereIn('aset_id' , $aset)
+					->where('tahun' , CRUDBooster::CurrYear());
 			
 	    }
 

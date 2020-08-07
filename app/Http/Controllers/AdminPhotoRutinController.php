@@ -7,6 +7,8 @@
 	use Illuminate\Support\Facades\App;
 	use PDF;
 	use Carbon\Carbon;
+	use Maatwebsite\Excel\Facades\Excel;
+	use PHPExcel_Worksheet_Drawing;
 
 	class AdminPhotoRutinController extends \crocodicstudio\crudbooster\controllers\CBController {
 
@@ -343,7 +345,7 @@
 
 			$data['tgl']    = Carbon::now()->format('Y-m-d');
 			$data['period'] = DB::table('bulan')->get();
-			$data['sla'] 	= DB::table('SLA')->get();
+			$data['sla'] 	= DB::table('SLA')->where('tahun' , CRUDBooster::CurrYear())->get();
 			$data['aset']	= DB::table('aset')->whereIn('id' , $aset)->get();
 				
 			//Create a view. Please use `cbView` method instead of view method from laravel.
@@ -357,16 +359,31 @@
 			return response()->json($data);
 		}
 
-		public function cari_data( $aset_id = 0 , $sla_id = 0 , $detail_sla_id = 0 , $period = '0'  ){
+		public function getRincianPekerjaan($id)
+		{
+
+			$data = DB::table('sub_detail_sla')->where('detail_sla_id' , $id)
+			->join('rincian_pekerjaan' , 'sub_detail_sla.rincian_pekerjaan_id' , 'rincian_pekerjaan.id')
+			->select('rincian_pekerjaan.id' , 'rincian_pekerjaan.uraian')
+			->get();
+
+			return response()->json($data);
+		}
+
+
+		public function cari_data( $aset_id = null , $sla_id = null , $detail_sla_id = null , $rinci_id = null  , $period = null  ){
 			
-			if($aset_id != 0){
-				if($period != 0){
-					if($sla_id != 0){
-						if($detail_sla_id != 0){
+			if($aset_id != null){
+				if($period != null){
+					if($sla_id != null){
+						if($detail_sla_id != null){
+							if($rinci_id != null){
+
+							}
 							$master = DB::table('m_pekerjaan')
 								->where('tahun' , CRUDBooster::CurrYear())
 								->where('aset_id' , $aset_id)
-								->where('period' ,$period)->first();
+								->where('period' , $period)->first();
 
 							$detail = DB::table('detail_pekerjaan')->where('m_pekerjaan_id' , $master->id)
 																	->where('sla_id' , $sla_id)
@@ -469,6 +486,131 @@
 
 			$pdf = PDF::setOptions(['isHtml5ParserEnabled' => true, 'isRemoteEnabled' => true])->loadView('backend.dokumentasi.print2', $data);
 			return $pdf->stream('test.pdf');
+		}
+
+		public function create_excel($id){
+			ini_set('memory_limit', '1024M');
+			set_time_limit(180);
+			
+			$a = DB::table('sub_detail_pekerjaan')->where('id' , $id)->first();
+			$data['detail_pekerjaan'] = DB::table('detail_pekerjaan')->where('id' , $a->detail_pekerjaan_id)->first();
+			$b = DB::table('m_pekerjaan')->where('id',$data['detail_pekerjaan']->m_pekerjaan_id)->first();
+			$data['aset'] = DB::table('aset')
+			->join('area' , 'aset.area_id' , 'area.id')
+			->join('wilayah' , 'wilayah.id' , 'area.wilayah_id')
+			->where('aset.id' , $b->aset_id)
+			->select('aset.nama as NmAset' , 'aset.alamat as alamat' , 'area.uraian as NmArea' , 'wilayah.uraian as NmWilayah')
+			->first();
+			
+			$tanggal			= 	Carbon::parse($a->tanggal);
+			$data['bulan'] 		=	DB::table('bulan')->where('id' , $tanggal->month)->first();
+			$data['thn']		= 	$tanggal->year;
+			$data['foto1']		= 	'app/'.$a->foto_sebelum;
+			$data['foto2']		=   'app/'.$a->foto_sesudah;
+
+
+			Excel::create('Laporan', function ($excel) use ($data) {
+				$excel->getProperties()->setCreator("Maarten Balliauw")
+                ->setLastModifiedBy("Data Solusion Comindo")
+                ->setTitle("Office 2007 XLSX Test Document")
+                ->setSubject("Office 2007 XLSX Test Document")
+                ->setDescription("Test document for Office 2007 XLSX, generated using PHP classes.")
+                ->setKeywords("office 2007 openxml php")
+                ->setCategory("Test result file");
+            		$excel->sheet('sheet_1', function ($sheet) use ($data ) {
+						$objDrawing = new PHPExcel_Worksheet_Drawing;
+						$objDrawing->setPath(storage_path('app/uploads/img/logo2.png'));
+						$objDrawing->setHeight(80);
+						$objDrawing->setCoordinates('A1');
+						$objDrawing->setWorksheet($sheet);
+
+						$objDrawing = new PHPExcel_Worksheet_Drawing;
+						$objDrawing->setPath(storage_path('app/uploads/img/logo.png'));
+						$objDrawing->setHeight(30);
+						$objDrawing->setCoordinates('K2');
+						$objDrawing->setWorksheet($sheet);
+
+
+
+						$sheet->mergeCells('E2:J2');
+						$sheet->mergeCells('E3:J3');
+						$sheet->mergeCells('E4:J4');
+						$sheet->setCellValue('E2', 'FORM HASIL TINDAKLANJUT PEKERJAAN RUTIN');
+						$sheet->setCellValue('e3', 'BULAN '. strtoupper($data['bulan']->nama) .' TAHUN ' . $data['thn']);
+						$sheet->setCellValue('e4', 'PT.PERMATA GRAHA NUSANTARA');
+
+						$sheet->cells('E2:J4', function($cells) {
+							$cells->setAlignment('center');
+							$cells->setValignment('center');
+							$cells->setFontWeight('bold');
+						});
+				
+						$sheet->mergeCells('B6:E6');
+						$sheet->setCellValue('B6', '1.SERVICES LEVEL AGGREEMENTS');
+						$sheet->mergeCells('g6:K6');
+						$sheet->setCellValue('G6', '2.LOKASI');
+						$sheet->cells('B6:K6', function($cells) {
+							$cells->setAlignment('LEFT');
+							$cells->setValignment('center');
+							$cells->setFontWeight('bold');
+							$cells->setFont(array('italic'=>true));
+						});
+						$sheet->setCellValue('B8', 'Uraian SLA');				
+						
+						$sheet->setCellValue('B9', 'Detail SLA');
+						$sheet->setCellValue('B10', 'Detail Pekerjaan');
+						$sheet->setCellValue('C9', ':');
+						$sheet->setCellValue('C8', ':');
+						$sheet->setCellValue('C10', ':');
+
+						$sheet->setCellValue('D8', $data['detail_pekerjaan']->sla_uraian);
+						$sheet->setCellValue('D9', $data['detail_pekerjaan']->detail_sla_uraian);
+						$sheet->mergeCells('D10:E12');				
+						$sheet->setCellValue('D10', $data['detail_pekerjaan']->rincian_pekerjaan_uraian);				
+						$sheet->getStyle('D10')->getAlignment()->setWrapText(true);
+						
+						$label = ['NAMA ASET' , 'ALAMAT' , 'AREA' , 'WILAYAH'];
+						$nilai = [$data['aset']->NmAset , $data['aset']->alamat , $data['aset']->NmArea  , $data['aset']->NmWilayah ];
+						$no = 0;
+						$no_start = 8;   
+						foreach ($label as $key => $value) {
+							$sheet->setCellValue('G'.$no_start.'' , $label[$no]);
+							$sheet->setCellValue('H'.$no_start.'' , ':');
+							$sheet->setCellValue('I'.$no_start.'' , $nilai[$no]);
+							$no_start = $no_start + 1;
+							$no++;
+						}
+						
+						$row = 14;
+						$sheet->mergeCells('B'.$row.':F'.$row.'');
+						$sheet->setCellValue('B'.$row, 'FOTO SEBELUM');
+						$sheet->mergeCells('G'.$row.':L'.$row.'');
+						$sheet->setCellValue('G'.$row, 'FOTO SESUDAH');
+
+						$objDrawing = new PHPExcel_Worksheet_Drawing;
+						$objDrawing->setPath(storage_path($data['foto1']));
+						$objDrawing->setHeight(200);
+						$objDrawing->setCoordinates('B16');
+						$objDrawing->setWorksheet($sheet);
+
+						$objDrawing = new PHPExcel_Worksheet_Drawing;
+						$objDrawing->setPath(storage_path($data['foto2']));
+						$objDrawing->setHeight(200);
+						$objDrawing->setCoordinates('G16');
+						$objDrawing->setWorksheet($sheet);
+
+						$sheet->setWidth(array(
+							'A'     =>  5,
+							'B'     =>  14.5,
+							'C'		=>  3,
+							'D'		=> 	15,
+							'E'		=> 	15
+						));
+
+                
+            	});
+			})->download('xlsx');
+        
 		}
 
 	    //By the way, you can still create your own method in here... :) 

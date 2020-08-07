@@ -8,6 +8,8 @@
 	use Cache;
 	use Carbon\Carbon;
 	use PDF;
+	use Maatwebsite\Excel\Facades\Excel;
+	use PHPExcel_Worksheet_Drawing;
 	// use ConsoleTVs\Charts\Charts;
 
 	class ReportController extends \crocodicstudio\crudbooster\controllers\CBController {
@@ -350,7 +352,7 @@
 		}
 
 		public function postLaporanSLA(Request $request){
-			
+			// return $request->all();
 			if($request->all()){
 				$db_aset = DB::table('user_aset')->where('user_id' , CRUDBooster::MyId())->get(['aset_id']);
 				$aset = [];
@@ -364,32 +366,36 @@
 				{
 					$pencapaian = DB::table('m_penilaian')->where('bulan' , '<' , 7)
 											->whereNotNull('pencapaian')
+											->where('tahun' , CRUDBooster::CurrYear())
 											->where('status' , 'DiSetujui')
 											->whereIn('aset_id' ,  $aset)
 											->get();
 					$bulan = ['Jan' , 'Feb' , 'Mar' , 'Apr' , 'Mei' , 'Jun'];
+					$data['period_text'] = "Januari s.d Juni";
 					
 				}else{
 					$pencapaian = DB::table('m_penilaian')->where('bulan' , '>' , 6)
 											->whereNotNull('pencapaian')
 											->where('status' , 'DiSetujui')
+											->where('tahun' , CRUDBooster::CurrYear())
 											->get();
 					$bulan = ['Jul' , 'Aug' , 'Sep' , 'Oct' , 'Nov' , 'Dec'];
+					$data['period_text'] = "Juli s.d Desember";
 				}
 				
 				foreach ($pencapaian as $key => $value) {
 					$cek = DB::table('rekap_penilaian_sla')->where('aset_id' , $value->aset_id)
-													->where('tahun' , $request->input('tahun'))
+													->where('tahun' , CRUDBooster::CurrYear())
 													->count();
 					if($cek != 0){
 						DB::table('rekap_penilaian_sla')->where('aset_id' , $value->aset_id)
-													->where('tahun' , $request->input('tahun'))
+													->where('tahun' , CRUDBooster::CurrYear())
 													->delete();
 					}
 					$data_aset = DB::table('user_aset')->where('aset_id' , $value->aset_id)->first();
 
 					$insert = [];
-					$insert['tahun'] 		= $request->input('tahun');
+					$insert['tahun'] 		= CRUDBooster::CurrYear();
 					$insert['regional_id'] 	= $data_aset->regional_id;
 					$insert['aset_id'] 		= $value->aset_id;
 					$insert['jan']			= 0;
@@ -447,16 +453,23 @@
 				$data['pencapaian'] = DB::table('rekap_penilaian_sla')
 											->join('regional' , 'rekap_penilaian_sla.regional_id' , '=' , 'regional.id')
 											->join('aset' , 'rekap_penilaian_sla.aset_id' , '=' , 'aset.id')
+											->where('tahun' , CRUDBooster::CurrYear())
 											->select('regional.uraian' , 'aset.nama' , 'rekap_penilaian_sla.*')
 											->get();
 				
-				$data['tahun']		= $request->input('tahun');
+				$data['tahun']		= CRUDBooster::CurrYear();
 				$data['bulan']		= $bulan;
 				$data['period']		= $period;
-				$pdf = PDF::setOptions(['isHtml5ParserEnabled' => true, 'isRemoteEnabled' => true])
-				->loadView('backend.laporan.sla.report', $data);
-				$pdf->setPaper('legal');
-				return $pdf->stream('test.pdf');
+
+				if($request->optformat == 'pdf'){
+					$pdf = PDF::setOptions(['isHtml5ParserEnabled' => true, 'isRemoteEnabled' => true])
+					->loadView('backend.laporan.sla.report', $data);
+					$pdf->setPaper('legal');
+					return $pdf->stream('test.pdf');
+				}else{
+					return $this->ExportToExcel($data);
+				}
+				
 
 			}
 		}
@@ -531,6 +544,142 @@
 				$pdf->setPaper('legal' , 'landscape');
 				
 				return $pdf->stream('test.pdf');
+		}
+
+		public function ExportToExcel($data = null){
+			// return $data;
+			ini_set('memory_limit', '1024M');
+			set_time_limit(180);
+			// $text_bulan  = $data['bulan'];
+			
+
+			Excel::create('Rekap SLA', function ($excel) use ($data) {
+				$excel->getProperties()->setCreator("PT. Data Solusi Comindo")
+                ->setLastModifiedBy("Data Solusi Comindo")
+                ->setTitle("Office 2007 XLSX Test Document");
+            		$excel->sheet('sheet_1', function ($sheet) use ($data ) {
+						$objDrawing = new PHPExcel_Worksheet_Drawing;
+						$objDrawing->setPath(storage_path('app/uploads/img/logo.png'));
+						$objDrawing->setHeight(30);
+						$objDrawing->setCoordinates('A2');
+						$objDrawing->setWorksheet($sheet);
+
+						$objDrawing = new PHPExcel_Worksheet_Drawing;
+						$objDrawing->setPath(storage_path('app/uploads/img/logo2.png'));
+						$objDrawing->setHeight(80);
+						$objDrawing->setCoordinates('G1');
+						$objDrawing->setWorksheet($sheet);
+						
+						//header
+						$sheet->mergeCells('C2:F2');
+						$sheet->mergeCells('C3:F3');
+						$sheet->mergeCells('C4:F4');
+						$sheet->setCellValue('C2', 'REKAP PENILAIAN SLA');
+						$sheet->setCellValue('C3', 'PERIODE '.strtoupper($data['period_text']));
+						$sheet->setCellValue('C4', 'TAHUN '.strtoupper($data['tahun']));
+
+						$sheet->cells('C2:F4', function($cells) {
+							$cells->setAlignment('center');
+							$cells->setValignment('center');
+							$cells->setFontWeight('bold');
+						});
+						// tabel
+							// header table
+							$text_header = ['No' , 'Wilayah' , 'Lokasi Gedung/Bangunan','Pencapaian SLA (%)'];
+							$text_bulan  = $data['bulan'];
+							$col = ['A' , 'B' , 'C' , 'D' ];
+							$row = 6;
+							foreach ($col as $key => $value) {
+								$sheet->setCellValue($col[$key].$row, $text_header[$key]);
+							}
+							$sheet->mergeCells('A6:A7');
+							$sheet->mergeCells('B6:B7');
+							$sheet->mergeCells('C6:C7');
+							$sheet->mergeCells('D6:I6');
+
+							$col = ['D' , 'E' , 'F' , 'G' , 'H' , 'I'];
+							$row = 7;
+							foreach ($col as $key => $value) {
+								$sheet->setCellValue($col[$key].$row, $text_bulan[$key]);
+							}
+							$sheet->cells('A6:I7', function($cells) {
+								$cells->setAlignment('center');
+								$cells->setValignment('center');
+								$cells->setFontWeight('bold');
+							});
+							
+							$sheet->setWidth(array(
+								'A'     =>  5,
+								'B'     =>  17,
+								'C'		=>  33,
+								'D'		=> 	7,
+								'E'		=> 	7,
+								'F'		=> 	7,
+								'G'		=> 	7,
+								'H'		=> 	7,
+								'I'		=> 	7,
+							));
+
+						$no = 1;
+						$row_start = 8;
+						
+						// return $bulan;
+						$total1 = 0;$total2 = 0;$total3 = 0;$total4 = 0;$total5 = 0;$total6 = 0;
+						foreach ($data['pencapaian'] as $key => $value) {
+							$nomor = $row_start + $no - 1;
+							$nilai1 = $value->$bulan[0];
+							$sheet->setCellValue('A'.$nomor.'', $no);
+							$sheet->setCellValue('B'.$nomor.'', $value->uraian);
+							$sheet->setCellValue('C'.$nomor.'', $value->nama);
+							if($data['period'] == 1){
+								$sheet->setCellValue('D'.$nomor.'', $value->jan);
+								$sheet->setCellValue('E'.$nomor.'', $value->feb);
+								$sheet->setCellValue('F'.$nomor.'', $value->mar);
+								$sheet->setCellValue('G'.$nomor.'', $value->apr);
+								$sheet->setCellValue('H'.$nomor.'', $value->mei);
+								$sheet->setCellValue('I'.$nomor.'', $value->jun);
+
+								$total1 = $total1+$value->jan;
+								$total2 = $total2+$value->feb;
+								$total3 = $total3+$value->mar;
+								$total4 = $total4+$value->apr;
+								$total5 = $total5+$value->mei;
+								$total6 = $total6+$value->jun;
+							}else{
+								$sheet->setCellValue('D'.$nomor.'', $value->jul);
+								$sheet->setCellValue('E'.$nomor.'', $value->aug);
+								$sheet->setCellValue('F'.$nomor.'', $value->sep);
+								$sheet->setCellValue('G'.$nomor.'', $value->oct);
+								$sheet->setCellValue('H'.$nomor.'', $value->nov);
+								$sheet->setCellValue('I'.$nomor.'', $value->dec);
+
+								$total1 = $total1+$value->jul;
+								$total2 = $total2+$value->aug;
+								$total3 = $total3+$value->sep;
+								$total4 = $total4+$value->oct;
+								$total5 = $total5+$value->nov;
+								$total6 = $total6+$value->dec;
+
+							}
+							
+							$no++;
+						}
+						$nomor=$nomor+1;
+						$sheet->setCellValue('A'.$nomor, 'TOTAL');
+						$sheet->setCellValue('D'.$nomor, $total1);
+						$sheet->setCellValue('E'.$nomor, $total2);
+						$sheet->setCellValue('F'.$nomor, $total3);
+						$sheet->setCellValue('G'.$nomor, $total4);
+						$sheet->setCellValue('H'.$nomor, $total5);
+						$sheet->setCellValue('I'.$nomor, $total6);
+						$sheet->mergeCells('A'.$nomor.':C'.$nomor);
+						$sheet->cells('A'.$nomor.':I'.$nomor, function($cells) {
+							$cells->setAlignment('center');
+							$cells->setValignment('center');
+							$cells->setFontWeight('bold');
+						});
+            	});
+			})->download('xlsx');
 		}
 
 

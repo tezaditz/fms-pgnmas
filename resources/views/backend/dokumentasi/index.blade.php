@@ -67,6 +67,18 @@
                   <p class='help-block'></p>
               </div>
         </div>
+        <div class='form-group header-group-0 ' id='form-group-period' style="">
+              <label class='control-label col-sm-2'>Rincian Pekerjaan
+                      <span class='text-danger' title='This field is required'>*</span>
+              </label>
+              <div class="col-sm-10">
+                  <select name="rincian_pekerjaan" id="rincian_pekerjaan" class="form-control">
+                  </select>
+                  <div class="text-danger">
+                  </div>
+                  <p class='help-block'></p>
+              </div>
+        </div>
         
     </form>
     </div>

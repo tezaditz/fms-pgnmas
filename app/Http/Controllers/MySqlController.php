@@ -304,7 +304,7 @@ class MySqlController extends \crocodicstudio\crudbooster\controllers\CBControll
     }
 
     public function backup(){
-       
+        ini_set("memory_limit", "10056M");
         $filename = "backup-" . Carbon::now()->format('Y-m-d_H-i-s') . ".sql";
         Artisan::call('backup:database',['filename' => $filename]);
         return back();
