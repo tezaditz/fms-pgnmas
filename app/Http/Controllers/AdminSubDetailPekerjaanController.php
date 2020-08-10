@@ -118,7 +118,7 @@
 	        | 
 	        */
 	        $this->index_button = array();
-
+			// $this->index_button[] = ['label'=>'Refresh Data','url'=>url()->current(),"icon"=>"fa fa-print"];
 
 
 	        /* 

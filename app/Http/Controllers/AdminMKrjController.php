@@ -82,9 +82,11 @@
 	        | @showIf 	   = If condition when action show. Use field alias. e.g : [id] == 1
 	        | 
 	        */
-	        $this->addaction = array();
-			// $this->addaction[] = ['label'=>'Detail','url'=>CRUDBooster::mainpath('m_krj/detail_pekerjaan/[id]'),'icon'=>'fa fa-check','color'=>'success','showIf'=>"[status] == 'pending'"];
-
+			$this->addaction = array();
+			
+			if(CRUDBooster::myPrivilegeId() == 4){
+			$this->addaction[] = ['label'=>'Reset','url'=>'/pgnmas/mkrj/resetdata/[id]','icon'=>'fa fa-refresh','color'=>'danger','confirmation'=>true];
+			}
 	        /* 
 	        | ---------------------------------------------------------------------- 
 	        | Add More Button Selected
@@ -302,70 +304,7 @@
 	    */
 	    public function hook_after_add($id) {        
 			//Your code here
-			$data = DB::table('m_pekerjaan')->where('id' , $id)->first();
-			$masterSla = DB::table('sla')->where('tahun' , CRUDBooster::CurrYear())->get(['id']);
-			$slaid = [];
-			foreach ($masterSla as $key => $value) {
-				$slaid[] = $value->id;
-			}
-			$sla = DB::table('sla_aset')->where('aset_id' , $data->aset_id)
-										->whereIn('sla_id' , $slaid)
-										->get();
-
-			
-				// DB::table('parameter')->where('id' , '!=' , 1)->delete();
-				foreach ($sla as $key => $value) {
-					$ketersediaan = DB::table('ketersediaan_sla')->where('sla_id' , $value->sla_id)
-										->where('ketersediaan' , 1)
-										->where('aset_id' , $data->aset_id)
-										->get();
-					
-					$insert = [];
-					foreach ($ketersediaan as $key2 => $value2) {
-						$sla = DB::table('sla')->where('id' , $value->sla_id)->first();
-						$detail = DB::table('detail_sla')->where('id' , $value2->detail_sla_id)->first();
-						$rincian = DB::table('rincian_pekerjaan')->where('id' , $value2->rincian_pekerjaan_id)->first();
-						$group = DB::table('group_sla')->where('id' , $value2->group_sla_id)->first();
-
-						$insert['tahun']				= CRUDBooster::CurrYear();
-						$insert['m_pekerjaan_id']		= $id;
-						$insert['sla_id']				= $value->sla_id;
-						$insert['detail_sla_id']		= $value2->detail_sla_id;
-						$insert['group_sla_id']			= $value2->group_sla_id;
-						$insert['rincian_pekerjaan_id']	= $value2->rincian_pekerjaan_id;
-						$insert['sla_uraian']			= $sla->uraian;
-						$insert['detail_sla_uraian']	= $detail->uraian;
-						$insert['rincian_pekerjaan_uraian']	= $rincian->uraian;
-						$insert['group_sla_uraian']	= $group->uraian;
-
-						$jadwal = DB::table('master_jadwal_sla')->where('sla_id' , $value->sla_id)
-																->where('detail_sla_id' , $value2->detail_sla_id )
-																->get();
-						
-						$status_jadwal = 0;
-						if(Count($jadwal) != 0)
-						{
-							$status_jadwal = 1;
-						}
-
-						$insert['status_jadwal']	= $status_jadwal;
-
-						DB::table('detail_pekerjaan')->insert($insert);
-
-						$get_detail_pekerjaan = DB::table('detail_pekerjaan')
-												->where('sla_id' , $value->sla_id)
-												->where('detail_sla_id' , $value2->detail_sla_id)
-												->where('status_jadwal' , 1)
-												->where('m_pekerjaan_id' , $id)
-												->first();
-
-						$detail_pekerjaan_id = $get_detail_pekerjaan->id;
-						$data = DB::table('m_pekerjaan')->where('id' , $id)->first();
-						$this->generate_jadwal_pekerjaan( $detail_pekerjaan_id ,  $data->period , $get_detail_pekerjaan->detail_sla_id);
-
-
-					}
-				}
+			$this->getJadwal($id);
 	    }
 
 	    /* 
@@ -475,298 +414,72 @@
 			});	
 		}
 
-		public function generate_jadwal_pekerjaan($detail_pekerjaan_id , $bulan , $detail_sla_id)
-		{
-			
-			$getJadwal 		= DB::table('master_jadwal_sla')->where('detail_sla_id' , $detail_sla_id)->first();
-			
-			$tanggal_awal 	= Carbon::create(CRUDBooster::CurrYear() , $bulan , 1 , 0 , 0 ,0);
-			$tanggal_akhir 	= Carbon::create(CRUDBooster::CurrYear() , $bulan + 1 , 0 , 0 , 0 ,0);
-			$nilai = 0;
+	
+		public function generatedetailpekerjaan($id){
+			$masterKerja = DB::table('m_pekerjaan')->where('id' , $id)->first();
 
-			switch ($bulan) {
-				case 1:
-					$nilai = $getJadwal->B1;
-					break;
-				case 2:
-					$nilai = $getJadwal->B2;
-					break;
-				case 3:
-					$nilai = $getJadwal->B3;
-					break;
-				case 4:
-					$nilai = $getJadwal->B4;
-					break;
-				case 5:
-					$nilai = $getJadwal->B5;
-					break;
-				case 6:
-					$nilai = $getJadwal->B6;
-					break;
-				case 7:
-					$nilai = $getJadwal->B7;
-					break;
-				case 8:
-					$nilai = $getJadwal->B8;
-					break;
-				case 9:
-					$nilai = $getJadwal->B9;
-					break;
-				case 10:
-					$nilai = $getJadwal->B10;
-					break;
-				case 11:
-					$nilai = $getJadwal->B11;
-					break;
+			// return $masterKerja->aset_id;
+			$ketersediaanSLA = DB::table('ketersediaan_sla')
+				->join('sla' , 'sla.id' , 'ketersediaan_sla.sla_id')
+				->join('detail_sla' , 'detail_sla.id' , 'ketersediaan_sla.detail_sla_id')
+				->join('rincian_pekerjaan' , 'rincian_pekerjaan.id' , 'ketersediaan_sla.rincian_pekerjaan_id')
+				->join('group_sla' , 'group_sla.id' , 'ketersediaan_sla.group_sla_id')
+				->where('ketersediaan_sla.aset_id' , $masterKerja->aset_id)
+				->where('ketersediaan_sla.tahun' , CRUDBooster::CurrYear())
+				->select(
+					'ketersediaan_sla.tahun',
+					'ketersediaan_sla.sla_id as slaid',
+					'ketersediaan_sla.detail_sla_id as detailslaid',
+					'ketersediaan_sla.rincian_pekerjaan_id as rincianid',
+					'ketersediaan_sla.group_sla_id as groupid',
+					'sla.uraian as slauraian',
+					'detail_sla.uraian as detailuraian',
+					'rincian_pekerjaan.uraian as rincianuraian',
+					'group_sla.uraian as groupuraian'
+					)
+				->get(); 
 
-				default:
-					$nilai = $getJadwal->B12;
-					break;
-			}
-
-			// $tanggal = Carbon::create(CRUDBooster::CurrYear() , 2 , 25 , 0 , 0 ,0);
-			// $a = $this->GetWeekNumber($tanggal);
-			// return $a;
-
-
-			if($nilai == 1)
-			{
-				DB::table('sub_detail_pekerjaan')->whereMonth('tanggal' , $bulan)
-												->where('detail_pekerjaan_id' , $detail_pekerjaan_id)->delete();
+				// return Count($ketersediaanSLA);
+			// return $ketersediaanSLA;
+			if(!empty($ketersediaanSLA)){
 				
-				for ($i = 1; $i <= $tanggal_akhir->day ; $i++) { 
-					$insert = [];
-					$tanggal = Carbon::create(CRUDBooster::CurrYear() , $bulan , $i , 0 , 0 ,0);
-					$a = $this->GetWeekNumber($tanggal);
-					$b = $tanggal->dayOfWeek;
-					
-					if($getJadwal->M1 == 1 && $a == 1 ){
-						if($getJadwal->H1 == 1 && $b == 1 ){
-							$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
-							$insert['tanggal'] = $tanggal;
-							$insert['foto_sebelum'] = 'uploads/img/no_images.png';
-							$insert['foto_sesudah'] = 'uploads/img/no_images.png';
-						}
-						if($getJadwal->H2 == 1 && $b == 2 ){
-							$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
-							$insert['tanggal'] = $tanggal;
-							$insert['foto_sebelum'] = 'uploads/img/no_images.png';
-							$insert['foto_sesudah'] = 'uploads/img/no_images.png';
-						}
-						if($getJadwal->H3 == 1 && $b == 3 ){
-							$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
-							$insert['tanggal'] = $tanggal;
-							$insert['foto_sebelum'] = 'uploads/img/no_images.png';
-							$insert['foto_sesudah'] = 'uploads/img/no_images.png';
-						}
-						if($getJadwal->H4 == 1 && $b == 4 ){
-							$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
-							$insert['tanggal'] = $tanggal;
-							$insert['foto_sebelum'] = 'uploads/img/no_images.png';
-							$insert['foto_sesudah'] = 'uploads/img/no_images.png';
-						}
-						if($getJadwal->H5 == 1 && $b == 5 ){
-							$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
-							$insert['tanggal'] = $tanggal;
-							$insert['foto_sebelum'] = 'uploads/img/no_images.png';
-							$insert['foto_sesudah'] = 'uploads/img/no_images.png';
-						}
-						if($getJadwal->H6 == 1 && $b == 6 ){
-							$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
-							$insert['tanggal'] = $tanggal;
-							$insert['foto_sebelum'] = 'uploads/img/no_images.png';
-							$insert['foto_sesudah'] = 'uploads/img/no_images.png';
-						}
-						if($getJadwal->H7 == 1 && $b == 7 ){
-							$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
-							$insert['tanggal'] = $tanggal;
-							$insert['foto_sebelum'] = 'uploads/img/no_images.png';
-							$insert['foto_sesudah'] = 'uploads/img/no_images.png';
-						}
+				foreach ($ketersediaanSLA as $key => $value) {
+						$insert = [];
 						
-					}
-					if($getJadwal->M2 == 1 && $a == 2 ){
-						if($getJadwal->H1 == 1 && $b == 1 ){
-							$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
-							$insert['tanggal'] = $tanggal;
-							$insert['foto_sebelum'] = 'uploads/img/no_images.png';
-							$insert['foto_sesudah'] = 'uploads/img/no_images.png';
-						}
-						if($getJadwal->H2 == 1 && $b == 2 ){
-							$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
-							$insert['tanggal'] = $tanggal;
-							$insert['foto_sebelum'] = 'uploads/img/no_images.png';
-							$insert['foto_sesudah'] = 'uploads/img/no_images.png';
-						}
-						if($getJadwal->H3 == 1 && $b == 3 ){
-							$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
-							$insert['tanggal'] = $tanggal;
-							$insert['foto_sebelum'] = 'uploads/img/no_images.png';
-							$insert['foto_sesudah'] = 'uploads/img/no_images.png';
-						}
-						if($getJadwal->H4 == 1 && $b == 4 ){
-							$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
-							$insert['tanggal'] = $tanggal;
-							$insert['foto_sebelum'] = 'uploads/img/no_images.png';
-							$insert['foto_sesudah'] = 'uploads/img/no_images.png';
-						}
-						if($getJadwal->H5 == 1 && $b == 5 ){
-							$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
-							$insert['tanggal'] = $tanggal;
-							$insert['foto_sebelum'] = 'uploads/img/no_images.png';
-							$insert['foto_sesudah'] = 'uploads/img/no_images.png';
-						}
-						if($getJadwal->H6 == 1 && $b == 6 ){
-							$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
-							$insert['tanggal'] = $tanggal;
-							$insert['foto_sebelum'] = 'uploads/img/no_images.png';
-							$insert['foto_sesudah'] = 'uploads/img/no_images.png';
-						}
-						if($getJadwal->H7 == 1 && $b == 7 ){
-							$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
-							$insert['tanggal'] = $tanggal;
-							$insert['foto_sebelum'] = 'uploads/img/no_images.png';
-							$insert['foto_sesudah'] = 'uploads/img/no_images.png';
-						}
-					}
-					if($getJadwal->M3 == 1 && $a == 3 ){
-						if($getJadwal->H1 == 1 && $b == 1 ){
-							$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
-							$insert['tanggal'] = $tanggal;
-							$insert['foto_sebelum'] = 'uploads/img/no_images.png';
-							$insert['foto_sesudah'] = 'uploads/img/no_images.png';
-						}
-						if($getJadwal->H2 == 1 && $b == 2 ){
-							$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
-							$insert['tanggal'] = $tanggal;
-							$insert['foto_sebelum'] = 'uploads/img/no_images.png';
-							$insert['foto_sesudah'] = 'uploads/img/no_images.png';
-						}
-						if($getJadwal->H3 == 1 && $b == 3 ){
-							$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
-							$insert['tanggal'] = $tanggal;
-							$insert['foto_sebelum'] = 'uploads/img/no_images.png';
-							$insert['foto_sesudah'] = 'uploads/img/no_images.png';
-						}
-						if($getJadwal->H4 == 1 && $b == 4 ){
-							$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
-							$insert['tanggal'] = $tanggal;
-							$insert['foto_sebelum'] = 'uploads/img/no_images.png';
-							$insert['foto_sesudah'] = 'uploads/img/no_images.png';
-						}
-						if($getJadwal->H5 == 1 && $b == 5 ){
-							$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
-							$insert['tanggal'] = $tanggal;
-							$insert['foto_sebelum'] = 'uploads/img/no_images.png';
-							$insert['foto_sesudah'] = 'uploads/img/no_images.png';
-						}
-						if($getJadwal->H6 == 1 && $b == 6 ){
-							$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
-							$insert['tanggal'] = $tanggal;
-							$insert['foto_sebelum'] = 'uploads/img/no_images.png';
-							$insert['foto_sesudah'] = 'uploads/img/no_images.png';
-						}
-						if($getJadwal->H7 == 1 && $b == 7 ){
-							$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
-							$insert['tanggal'] = $tanggal;
-							$insert['foto_sebelum'] = 'uploads/img/no_images.png';
-							$insert['foto_sesudah'] = 'uploads/img/no_images.png';
-						}
-					}
-					if($getJadwal->M4 == 1 && $a == 4 ){
-						if($getJadwal->H1 == 1 && $b == 1 ){
-							$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
-							$insert['tanggal'] = $tanggal;
-							$insert['foto_sebelum'] = 'uploads/img/no_images.png';
-							$insert['foto_sesudah'] = 'uploads/img/no_images.png';
-						}
-						if($getJadwal->H2 == 1 && $b == 2 ){
-							$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
-							$insert['tanggal'] = $tanggal;
-							$insert['foto_sebelum'] = 'uploads/img/no_images.png';
-							$insert['foto_sesudah'] = 'uploads/img/no_images.png';
-						}
-						if($getJadwal->H3 == 1 && $b == 3 ){
-							$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
-							$insert['tanggal'] = $tanggal;
-							$insert['foto_sebelum'] = 'uploads/img/no_images.png';
-							$insert['foto_sesudah'] = 'uploads/img/no_images.png';
-						}
-						if($getJadwal->H4 == 1 && $b == 4 ){
-							$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
-							$insert['tanggal'] = $tanggal;
-							$insert['foto_sebelum'] = 'uploads/img/no_images.png';
-							$insert['foto_sesudah'] = 'uploads/img/no_images.png';
-						}
-						if($getJadwal->H5 == 1 && $b == 5 ){
-							$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
-							$insert['tanggal'] = $tanggal;
-							$insert['foto_sebelum'] = 'uploads/img/no_images.png';
-							$insert['foto_sesudah'] = 'uploads/img/no_images.png';
-						}
-						if($getJadwal->H6 == 1 && $b == 6 ){
-							$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
-							$insert['tanggal'] = $tanggal;
-							$insert['foto_sebelum'] = 'uploads/img/no_images.png';
-							$insert['foto_sesudah'] = 'uploads/img/no_images.png';
-						}
-						if($getJadwal->H7 == 1 && $b == 7 ){
-							$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
-							$insert['tanggal'] = $tanggal;
-							$insert['foto_sebelum'] = 'uploads/img/no_images.png';
-							$insert['foto_sesudah'] = 'uploads/img/no_images.png';
-						}
-					}
-					if($getJadwal->M5 == 1 && $a == 5 ){
-						if($getJadwal->H1 == 1 && $b == 1 ){
-							$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
-							$insert['tanggal'] = $tanggal;
-							$insert['foto_sebelum'] = 'uploads/img/no_images.png';
-							$insert['foto_sesudah'] = 'uploads/img/no_images.png';
-						}
-						if($getJadwal->H2 == 1 && $b == 2 ){
-							$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
-							$insert['tanggal'] = $tanggal;
-							$insert['foto_sebelum'] = 'uploads/img/no_images.png';
-							$insert['foto_sesudah'] = 'uploads/img/no_images.png';
-						}
-						if($getJadwal->H3 == 1 && $b == 3 ){
-							$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
-							$insert['tanggal'] = $tanggal;
-							$insert['foto_sebelum'] = 'uploads/img/no_images.png';
-							$insert['foto_sesudah'] = 'uploads/img/no_images.png';
-						}
-						if($getJadwal->H4 == 1 && $b == 4 ){
-							$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
-							$insert['tanggal'] = $tanggal;
-							$insert['foto_sebelum'] = 'uploads/img/no_images.png';
-							$insert['foto_sesudah'] = 'uploads/img/no_images.png';
-						}
-						if($getJadwal->H5 == 1 && $b == 5 ){
-							$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
-							$insert['tanggal'] = $tanggal;
-							$insert['foto_sebelum'] = 'uploads/img/no_images.png';
-							$insert['foto_sesudah'] = 'uploads/img/no_images.png';
-						}
-						if($getJadwal->H6 == 1 && $b == 6 ){
-							$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
-							$insert['tanggal'] = $tanggal;
-							$insert['foto_sebelum'] = 'uploads/img/no_images.png';
-							$insert['foto_sesudah'] = 'uploads/img/no_images.png';
-						}
-						if($getJadwal->H7 == 1 && $b == 7 ){
-							$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
-							$insert['tanggal'] = $tanggal;
-							$insert['foto_sebelum'] = 'uploads/img/no_images.png';
-							$insert['foto_sesudah'] = 'uploads/img/no_images.png';
-						}
-					}					
-					
-					DB::table('sub_detail_pekerjaan')->insert($insert);
+						$jadwal = DB::table('master_jadwal_sla')->where('sla_id' , $value->slaid)
+						->where('detail_sla_id' , $value->detailslaid )
+						->get();
+
+						$status_jadwal = 0;
+						if(Count($jadwal) != 0){$status_jadwal = 1;}
+						$insert['status_jadwal']	= $status_jadwal;
+
+						$insert['tahun']					= CRUDBooster::CurrYear();
+						$insert['m_pekerjaan_id']			= $id;
+						$insert['sla_id']					= $value->slaid;
+						$insert['detail_sla_id']			= $value->detailslaid;
+						$insert['group_sla_id']				= $value->groupid;
+						$insert['rincian_pekerjaan_id']		= $value->rincianid;
+						$insert['sla_uraian']				= $value->slauraian;
+						$insert['detail_sla_uraian']		= $value->detailuraian;
+						$insert['rincian_pekerjaan_uraian']	= $value->rincianuraian;
+						$insert['group_sla_uraian']			= $group->groupuraian;
+						DB::table('detail_pekerjaan')->insert($insert);
 				}
-				
+
+				return 'true';
+			}else{ return 'false';}
+			
+		}
+
+
+		public function getJadwal($id){
+			$this->generatedetailpekerjaan($id);
+			$b = DB::table('m_pekerjaan')->where('id' , $id)->first();
+			$a = DB::table('detail_pekerjaan')->where('m_pekerjaan_id' , $id)->get();
+			foreach ($a as $key => $value) {
+				$this->generate_jadwal_pekerjaan($value->id , $b->period , $value->detail_sla_id);
 			}
-			// return 'OK';
 		}
 
 		public function GetWeekNumber($date)
@@ -782,6 +495,325 @@
 			$day_of_month = $date->format('j');
 			$a = floor(($day_of_first + $day_of_month - 1) / 7) + 1;
 			return $a;
+		}
+
+		public function generate_jadwal_pekerjaan($detail_pekerjaan_id , $bulan , $detail_sla_id)
+		{
+			// return $bulan;
+			$getJadwal 		= DB::table('master_jadwal_sla')->where('detail_sla_id' , $detail_sla_id)->get();
+			if(!empty($getJadwal)){
+				foreach ($getJadwal as $key => $value) {
+					$tanggal_awal 	= Carbon::create(CRUDBooster::CurrYear() , $bulan , 1 , 0 , 0 ,0);
+					$tanggal_akhir 	= Carbon::create(CRUDBooster::CurrYear() , $bulan + 1 , 0 , 0 , 0 ,0);
+					$nilai = 0;
+					// return $tanggal_akhir;
+					switch ($bulan) {
+						case 1:
+							$nilai = $value->B1;
+							break;
+						case 2:
+							$nilai = $value->B2;
+							break;
+						case 3:
+							$nilai = $value->B3;
+							break;
+						case 4:
+							$nilai = $value->B4;
+							break;
+						case 5:
+							$nilai = $value->B5;
+							break;
+						case 6:
+							$nilai = $value->B6;
+							break;
+						case 7:
+							$nilai = $value->B7;
+							break;
+						case 8:
+							$nilai = $value->B8;
+							break;
+						case 9:
+							$nilai = $value->B9;
+							break;
+						case 10:
+							$nilai = $value->B10;
+							break;
+						case 11:
+							$nilai = $value->B11;
+							break;
+		
+						default:
+							$nilai = $getJadwal->B12;
+							break;
+					}
+
+					if($nilai == 1){
+						
+						// delete data sub detail pekerjaan
+						DB::table('sub_detail_pekerjaan')->whereMonth('tanggal' , $bulan)
+												 ->whereYear('tanggal' , CRUDBooster::CurrYear())
+												 ->where('detail_pekerjaan_id' , $detail_pekerjaan_id)->delete();
+						// return $tanggal_akhir;
+						for ($i = 1; $i <= $tanggal_akhir->day ; $i++) {
+							$insert = [];
+
+							$tanggal = Carbon::create(CRUDBooster::CurrYear() , $bulan , $i , 0 , 0 ,0);
+							// if($i == 5){
+							// 		$a = $this->GetWeekNumber($tanggal);	// menyatakan minggu ke berapa
+							// 		$b = $tanggal->dayOfWeek;				// menyatakan hari apa
+							// 	return 'Minggu Ke : '. $a . 'Hari ke :'. $b;
+							// }
+							
+														
+							$a = $this->GetWeekNumber($tanggal);	// menyatakan minggu ke berapa
+							$b = $tanggal->dayOfWeek;				// menyatakan hari apa
+
+							// isi nilai
+								if($value->M1 == 1 && $a == 1 ){
+									if($value->H1 == 1 && $b == 1 ){
+										$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
+										$insert['tanggal'] = $tanggal;
+										$insert['foto_sebelum'] = 'uploads/img/no_images.png';
+										$insert['foto_sesudah'] = 'uploads/img/no_images.png';
+									}
+									if($value->H2 == 1 && $b == 2 ){
+										$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
+										$insert['tanggal'] = $tanggal;
+										$insert['foto_sebelum'] = 'uploads/img/no_images.png';
+										$insert['foto_sesudah'] = 'uploads/img/no_images.png';
+									}
+									if($value->H3 == 1 && $b == 3 ){
+										$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
+										$insert['tanggal'] = $tanggal;
+										$insert['foto_sebelum'] = 'uploads/img/no_images.png';
+										$insert['foto_sesudah'] = 'uploads/img/no_images.png';
+									}
+									if($value->H4 == 1 && $b == 4 ){
+										$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
+										$insert['tanggal'] = $tanggal;
+										$insert['foto_sebelum'] = 'uploads/img/no_images.png';
+										$insert['foto_sesudah'] = 'uploads/img/no_images.png';
+									}
+									if($value->H5 == 1 && $b == 5 ){
+										$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
+										$insert['tanggal'] = $tanggal;
+										$insert['foto_sebelum'] = 'uploads/img/no_images.png';
+										$insert['foto_sesudah'] = 'uploads/img/no_images.png';
+									}
+									if($value->H6 == 1 && $b == 6 ){
+										
+										$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
+										$insert['tanggal'] = $tanggal;
+										$insert['foto_sebelum'] = 'uploads/img/no_images.png';
+										$insert['foto_sesudah'] = 'uploads/img/no_images.png';
+									}
+									if($value->H7 == 1 && $b == 0 ){
+										$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
+										$insert['tanggal'] = $tanggal;
+										$insert['foto_sebelum'] = 'uploads/img/no_images.png';
+										$insert['foto_sesudah'] = 'uploads/img/no_images.png';
+									}
+									
+								}
+								if($value->M2 == 1 && $a == 2 ){
+									if($value->H1 == 1 && $b == 1 ){
+										$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
+										$insert['tanggal'] = $tanggal;
+										$insert['foto_sebelum'] = 'uploads/img/no_images.png';
+										$insert['foto_sesudah'] = 'uploads/img/no_images.png';
+									}
+									if($value->H2 == 1 && $b == 2 ){
+										$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
+										$insert['tanggal'] = $tanggal;
+										$insert['foto_sebelum'] = 'uploads/img/no_images.png';
+										$insert['foto_sesudah'] = 'uploads/img/no_images.png';
+									}
+									if($value->H3 == 1 && $b == 3 ){
+										$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
+										$insert['tanggal'] = $tanggal;
+										$insert['foto_sebelum'] = 'uploads/img/no_images.png';
+										$insert['foto_sesudah'] = 'uploads/img/no_images.png';
+									}
+									if($value->H4 == 1 && $b == 4 ){
+										$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
+										$insert['tanggal'] = $tanggal;
+										$insert['foto_sebelum'] = 'uploads/img/no_images.png';
+										$insert['foto_sesudah'] = 'uploads/img/no_images.png';
+									}
+									if($value->H5 == 1 && $b == 5 ){
+										$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
+										$insert['tanggal'] = $tanggal;
+										$insert['foto_sebelum'] = 'uploads/img/no_images.png';
+										$insert['foto_sesudah'] = 'uploads/img/no_images.png';
+									}
+									if($value->H6 == 1 && $b == 6 ){
+										$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
+										$insert['tanggal'] = $tanggal;
+										$insert['foto_sebelum'] = 'uploads/img/no_images.png';
+										$insert['foto_sesudah'] = 'uploads/img/no_images.png';
+									}
+									if($value->H7 == 1 && $b == 0 ){
+										$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
+										$insert['tanggal'] = $tanggal;
+										$insert['foto_sebelum'] = 'uploads/img/no_images.png';
+										$insert['foto_sesudah'] = 'uploads/img/no_images.png';
+									}
+								}
+								if($value->M3 == 1 && $a == 3 ){
+									if($value->H1 == 1 && $b == 1 ){
+										$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
+										$insert['tanggal'] = $tanggal;
+										$insert['foto_sebelum'] = 'uploads/img/no_images.png';
+										$insert['foto_sesudah'] = 'uploads/img/no_images.png';
+									}
+									if($value->H2 == 1 && $b == 2 ){
+										$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
+										$insert['tanggal'] = $tanggal;
+										$insert['foto_sebelum'] = 'uploads/img/no_images.png';
+										$insert['foto_sesudah'] = 'uploads/img/no_images.png';
+									}
+									if($value->H3 == 1 && $b == 3 ){
+										$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
+										$insert['tanggal'] = $tanggal;
+										$insert['foto_sebelum'] = 'uploads/img/no_images.png';
+										$insert['foto_sesudah'] = 'uploads/img/no_images.png';
+									}
+									if($value->H4 == 1 && $b == 4 ){
+										$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
+										$insert['tanggal'] = $tanggal;
+										$insert['foto_sebelum'] = 'uploads/img/no_images.png';
+										$insert['foto_sesudah'] = 'uploads/img/no_images.png';
+									}
+									if($value->H5 == 1 && $b == 5 ){
+										$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
+										$insert['tanggal'] = $tanggal;
+										$insert['foto_sebelum'] = 'uploads/img/no_images.png';
+										$insert['foto_sesudah'] = 'uploads/img/no_images.png';
+									}
+									if($value->H6 == 1 && $b == 6 ){
+										$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
+										$insert['tanggal'] = $tanggal;
+										$insert['foto_sebelum'] = 'uploads/img/no_images.png';
+										$insert['foto_sesudah'] = 'uploads/img/no_images.png';
+									}
+									if($value->H7 == 1 && $b == 0 ){
+										$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
+										$insert['tanggal'] = $tanggal;
+										$insert['foto_sebelum'] = 'uploads/img/no_images.png';
+										$insert['foto_sesudah'] = 'uploads/img/no_images.png';
+									}
+								}
+								if($value->M4 == 1 && $a == 4 ){
+									if($value->H1 == 1 && $b == 1 ){
+										$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
+										$insert['tanggal'] = $tanggal;
+										$insert['foto_sebelum'] = 'uploads/img/no_images.png';
+										$insert['foto_sesudah'] = 'uploads/img/no_images.png';
+									}
+									if($value->H2 == 1 && $b == 2 ){
+										$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
+										$insert['tanggal'] = $tanggal;
+										$insert['foto_sebelum'] = 'uploads/img/no_images.png';
+										$insert['foto_sesudah'] = 'uploads/img/no_images.png';
+									}
+									if($value->H3 == 1 && $b == 3 ){
+										$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
+										$insert['tanggal'] = $tanggal;
+										$insert['foto_sebelum'] = 'uploads/img/no_images.png';
+										$insert['foto_sesudah'] = 'uploads/img/no_images.png';
+									}
+									if($value->H4 == 1 && $b == 4 ){
+										$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
+										$insert['tanggal'] = $tanggal;
+										$insert['foto_sebelum'] = 'uploads/img/no_images.png';
+										$insert['foto_sesudah'] = 'uploads/img/no_images.png';
+									}
+									if($value->H5 == 1 && $b == 5 ){
+										$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
+										$insert['tanggal'] = $tanggal;
+										$insert['foto_sebelum'] = 'uploads/img/no_images.png';
+										$insert['foto_sesudah'] = 'uploads/img/no_images.png';
+									}
+									if($value->H6 == 1 && $b == 6 ){
+										$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
+										$insert['tanggal'] = $tanggal;
+										$insert['foto_sebelum'] = 'uploads/img/no_images.png';
+										$insert['foto_sesudah'] = 'uploads/img/no_images.png';
+									}
+									if($value->H7 == 1 && $b == 0 ){
+										$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
+										$insert['tanggal'] = $tanggal;
+										$insert['foto_sebelum'] = 'uploads/img/no_images.png';
+										$insert['foto_sesudah'] = 'uploads/img/no_images.png';
+									}
+								}
+								if($value->M5 == 1 && $a == 5 ){
+									if($value->H1 == 1 && $b == 1 ){
+										$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
+										$insert['tanggal'] = $tanggal;
+										$insert['foto_sebelum'] = 'uploads/img/no_images.png';
+										$insert['foto_sesudah'] = 'uploads/img/no_images.png';
+									}
+									if($value->H2 == 1 && $b == 2 ){
+										$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
+										$insert['tanggal'] = $tanggal;
+										$insert['foto_sebelum'] = 'uploads/img/no_images.png';
+										$insert['foto_sesudah'] = 'uploads/img/no_images.png';
+									}
+									if($value->H3 == 1 && $b == 3 ){
+										$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
+										$insert['tanggal'] = $tanggal;
+										$insert['foto_sebelum'] = 'uploads/img/no_images.png';
+										$insert['foto_sesudah'] = 'uploads/img/no_images.png';
+									}
+									if($value->H4 == 1 && $b == 4 ){
+										$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
+										$insert['tanggal'] = $tanggal;
+										$insert['foto_sebelum'] = 'uploads/img/no_images.png';
+										$insert['foto_sesudah'] = 'uploads/img/no_images.png';
+									}
+									if($value->H5 == 1 && $b == 5 ){
+										$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
+										$insert['tanggal'] = $tanggal;
+										$insert['foto_sebelum'] = 'uploads/img/no_images.png';
+										$insert['foto_sesudah'] = 'uploads/img/no_images.png';
+									}
+									if($value->H6 == 1 && $b == 6 ){
+										$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
+										$insert['tanggal'] = $tanggal;
+										$insert['foto_sebelum'] = 'uploads/img/no_images.png';
+										$insert['foto_sesudah'] = 'uploads/img/no_images.png';
+									}
+									if($value->H7 == 1 && $b == 0 ){
+										$insert['detail_pekerjaan_id'] = $detail_pekerjaan_id;
+										$insert['tanggal'] = $tanggal;
+										$insert['foto_sebelum'] = 'uploads/img/no_images.png';
+										$insert['foto_sesudah'] = 'uploads/img/no_images.png';
+									}
+								}	
+							// end isi nilai
+							DB::table('sub_detail_pekerjaan')->insert($insert);
+						};
+						
+					}
+				}
+			}
+			return $getJadwal;
+		}
+
+		public function resetTindakLanjut($id){
+			// hapus sub detail pekerjaan & detail pekerjaan
+			$a = DB::table('detail_pekerjaan')->where('m_pekerjaan_id' , $id)->get();
+			foreach ($a as $key => $value) {
+				DB::table('sub_detail_pekerjaan')->where('detail_pekerjaan_id' , $value->id)->delete();
+			}
+			DB::table('detail_pekerjaan')->where('m_pekerjaan_id' , $id)->delete();
+			$this->getJadwal($id);
+
+			$to = '/pgnmas/m_krj';
+			$message = 'Reset Tindaklanjut Telah Selesai!';
+			$type = 'info';
+			CRUDBooster::redirect($to,$message,$type);
 		}
 
 		

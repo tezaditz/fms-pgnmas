@@ -106,6 +106,7 @@
 
 			if(CRUDBooster::myPrivilegeId() == 8 || CRUDBooster::myPrivilegeId() == 1){
 				$this->addaction[] = ['label'=>'','url'=>'/pgnmas/penilaian/delete/[id]','icon'=>'fa fa-trash','color'=>'danger','target'=>'_blank'];
+				$this->addaction[] = ['label'=>'','url'=>CRUDBooster::mainpath('print/[id]'),'icon'=>'fa fa-print','color'=>'success','target'=>'_blank' ,'showIf'=>"[status] == 'LFM (Lengkap)' or [status] == 'DISETUJUI'"];
 			}
 
 			if(CRUDBooster::myPrivilegeId() == 12)

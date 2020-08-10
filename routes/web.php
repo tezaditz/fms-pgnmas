@@ -112,3 +112,6 @@ Route::post('/pgnmas/simpandetailmeterlistrik' , 'AdminMeterListrikController@si
 // history penilaian
 Route::get('/pgnmas/detail_history_penilaian/{id?}/{userid?}' , 'AdminMnilaiController@getDetailHistory')->name('getDetailHistory');
 Route::get('/pgnmas/penilaian/lfm/{id?}/setuju' , 'PenilaianSlaController@lfmsetuju')->name('LfmSetuju');
+
+Route::get('/pgnmas/masterjadwal/getjadwal/{id?}' , 'AdminMKrjController@getjadwal')->name('getjadwalsla');
+Route::get('/pgnmas/mkrj/resetdata/{id?}' , 'AdminMKrjController@resetTindakLanjut')->name('ResetTindakLanjutLeader');
