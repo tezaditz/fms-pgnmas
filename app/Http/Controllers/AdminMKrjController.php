@@ -84,9 +84,9 @@
 	        */
 			$this->addaction = array();
 			
-			if(CRUDBooster::myPrivilegeId() == 4){
+			
 			$this->addaction[] = ['label'=>'Reset','url'=>'/pgnmas/mkrj/resetdata/[id]','icon'=>'fa fa-refresh','color'=>'danger','confirmation'=>true];
-			}
+			
 	        /* 
 	        | ---------------------------------------------------------------------- 
 	        | Add More Button Selected
@@ -285,6 +285,16 @@
 				CRUDBooster::redirect($to,$message,$type);
 			}
 
+			$a = DB::table('m_pekerjaan')->where('aset_id' , $postdata['aset_id'])
+										 ->where('period' , $postdata['period'])
+										 ->get();
+			if(!empty($a)){
+				$to = '/pgnmas/m_krj';
+				$message = 'Tindaklanjut untuk Aset pada periode ini sudah Tersedia!';
+				$type = 'info';
+				CRUDBooster::redirect($to,$message,$type);
+			}
+
 
 
 			$aset = DB::table('aset')->where('id' , $postdata['aset_id'])->first();
@@ -360,7 +370,7 @@
 
 		public function getAdd()
 		{
-			
+			 
 			if(!CRUDBooster::isCreate() && $this->global_privilege==FALSE || $this->button_add==FALSE) {    
 				CRUDBooster::redirect(CRUDBooster::adminPath(),trans("crudbooster.denied_access"));
 			  }
@@ -474,11 +484,14 @@
 
 
 		public function getJadwal($id){
+			// return $id;
 			$this->generatedetailpekerjaan($id);
 			$b = DB::table('m_pekerjaan')->where('id' , $id)->first();
+			// return $b->period; ok
 			$a = DB::table('detail_pekerjaan')->where('m_pekerjaan_id' , $id)->get();
+			// return $a; ok
 			foreach ($a as $key => $value) {
-				$this->generate_jadwal_pekerjaan($value->id , $b->period , $value->detail_sla_id);
+				return $this->generate_jadwal_pekerjaan($value->id , $b->period , $value->detail_sla_id);
 			}
 		}
 
@@ -501,6 +514,7 @@
 		{
 			// return $bulan;
 			$getJadwal 		= DB::table('master_jadwal_sla')->where('detail_sla_id' , $detail_sla_id)->get();
+			// return $getJadwal;
 			if(!empty($getJadwal)){
 				foreach ($getJadwal as $key => $value) {
 					$tanggal_awal 	= Carbon::create(CRUDBooster::CurrYear() , $bulan , 1 , 0 , 0 ,0);
@@ -550,9 +564,9 @@
 					if($nilai == 1){
 						
 						// delete data sub detail pekerjaan
-						DB::table('sub_detail_pekerjaan')->whereMonth('tanggal' , $bulan)
-												 ->whereYear('tanggal' , CRUDBooster::CurrYear())
-												 ->where('detail_pekerjaan_id' , $detail_pekerjaan_id)->delete();
+						// DB::table('sub_detail_pekerjaan')->whereMonth('tanggal' , $bulan)
+						// 						 ->whereYear('tanggal' , CRUDBooster::CurrYear())
+						// 						 ->where('detail_pekerjaan_id' , $detail_pekerjaan_id)->delete();
 						// return $tanggal_akhir;
 						for ($i = 1; $i <= $tanggal_akhir->day ; $i++) {
 							$insert = [];
@@ -798,7 +812,7 @@
 					}
 				}
 			}
-			return $getJadwal;
+			return 'Generate Jadwal Selesai';
 		}
 
 		public function resetTindakLanjut($id){
