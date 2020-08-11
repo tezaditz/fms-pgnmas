@@ -478,6 +478,7 @@
 		}
 
 		public function simpan_to_rekap($utility , $jenis){
+			// return $utility;
 			$table = '';
 			switch ($utility) {
 				case 'air':
@@ -494,6 +495,7 @@
 					break;
 			}
 			
+			
 			//get aset yg dikelola user
 				$aset = [];
 				$useraset = DB::table('user_aset')->where('user_id' , CRUDBooster::myId())->get();
@@ -501,7 +503,8 @@
 					$aset[] = $value->aset_id;
 				} 
 			// end get aset yg dikelola user
-
+			
+			$this->resetRekapan($utility , $jenis , $aset);
 			// get data utility
 			if($jenis != '' ){
 				$dataUtility = DB::table($table)
@@ -853,8 +856,6 @@
 			return $dataGrafik;
 		}
 
-
-
 		public function update_status_complain_out_standing()
 		{
 			date_default_timezone_set("Asia/Bangkok");
@@ -904,6 +905,40 @@
 			$parameter = DB::table('parameter')->where('nama' ,  'Link Halomas')->first();
 			// return $parameter->nilai;
 			$this->cbView('backend.dashboard.halomas',compact('parameter'));
+		}
+
+		public function resetRekapan($utility = null , $jenis = null , $aset = null){
+			$table = '';
+			switch ($utility) {
+				case 'air':
+					$table = 'master_air';	
+					break;
+				case 'solar':
+					$table = 'master_solar';	
+					break;
+				case 'limbah':
+					$table = 'master_limbah';	
+					break;
+				default:
+				$table = 'master_listrik';
+					break;
+			}
+			// return $table;
+
+			$a = DB::table($table)->where('tahun' , CRUDBooster::CurrYear())
+								  ->whereIn('aset_id' , $aset)
+									->get();
+			// return Count($a);
+			if(Count($a) == 0){
+				// return 'Kosong';
+				DB::table('rekap_pemakaian')->where('jenis_pemakaian' , $utility)
+											->where('tahun' , CRUDBooster::CurrYear())
+											->whereIn('aset_id'  , $aset)
+											->update([
+												'jan' => 0, 'feb'=> 0 , 'mar'=>0,'apr'=>0,'may'=>0,'jun'=>0,
+												'jul' => 0, 'aug'=> 0 , 'sep'=>0,'oct'=>0,'nov'=>0,'des'=>0
+											]);
+			}
 		}
 
 	}
