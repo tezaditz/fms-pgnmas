@@ -173,7 +173,43 @@ class PenilaianSlaController extends Controller
                 ->where('m_penilaian_id' , $id)
                 ->count();
 
-                // return $total_sedia;
+                $total_laksana = DB::table('detail_penilaian')
+                ->where('dilaksanakan' , 1)
+                ->where('m_penilaian_id' , $id)
+                ->count();
+
+                $total_baik = DB::table('detail_penilaian')
+                ->where('sesuai' , 3)
+                ->where('m_penilaian_id' , $id)
+                ->count();
+
+                $total_cukup = DB::table('detail_penilaian')
+                ->where('sesuai' , 2)
+                ->where('m_penilaian_id' , $id)
+                ->count();
+
+                $total_kurang = DB::table('detail_penilaian')
+                ->where('sesuai' , 1)
+                ->where('m_penilaian_id' , $id)
+                ->count();
+            // end hitung
+            $nilai_maksimum             = $total_sedia * 3;
+            // return $total_sedia;
+            $persentase_dilaksanakan    = ($total_laksana / $total_sedia) * 100;
+            $pencapaian_sla             = ((($total_baik * 3) + ($total_cukup * 2) + ($total_kurang * 1)) / $nilai_maksimum) * 100;
+
+            $data['sedia'] = $total_sedia;
+            $data['maks']   = $nilai_maksimum;
+            $data['persentase'] = $persentase_dilaksanakan;
+            $data['pencapaian'] = $pencapaian_sla;
+            return $data;
+    }
+
+    public function hitung_lfm($id){
+        $total_sedia = DB::table('detail_penilaian')
+                ->where('ketersediaan_fasilitas' , 1)
+                ->where('m_penilaian_id' , $id)
+                ->count();
 
                 $total_laksana = DB::table('detail_penilaian')
                 ->where('dilaksanakan' , 1)

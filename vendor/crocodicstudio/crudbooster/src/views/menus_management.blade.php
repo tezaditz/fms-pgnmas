@@ -87,7 +87,7 @@
                     delay: 200,
                     isValidTarget: function ($item, container) {
                         var depth = 1, // Start with a depth of one (the element itself)
-                            maxDepth = 3,
+                            maxDepth = 4,
                             children = $item.find('ul').first().find('li');
 
                         // Add the amount of parents to the depth

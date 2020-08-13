@@ -252,26 +252,12 @@ class MenusController extends CBController
         $id_cms_privileges = ($id_cms_privileges) ?: CRUDBooster::myPrivilegeId();
 
         $menu_active = DB::table('cms_menus')->where('parent_id', 0)->where('is_active', 1)->orderby('sorting', 'asc')->get();
-
+        
         foreach ($menu_active as &$menu) {
             $child = DB::table('cms_menus')->where('is_active', 1)->where('parent_id', $menu->id)->orderby('sorting', 'asc')->get();
             if (count($child)) {
                 $menu->children = $child;
-
-                // add menu level 3
-                foreach($child as $keys => $childs)
-                {
-                    $sub_child = DB::table('cms_menus')->where('is_active', 1)->where('parent_id', $childs->id)->orderby('sorting', 'asc')->get();
-                    if(Count($sub_child))
-                    {
-                        $menu->children[$keys]->sub_children = $sub_child;
-                    }
-                }
-                // end menu level 3
             }
-
-            
-
         }
 
         $menu_inactive = DB::table('cms_menus')->where('parent_id', 0)->where('is_active', 0)->orderby('sorting', 'asc')->get();
