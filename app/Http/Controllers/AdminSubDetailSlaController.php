@@ -37,7 +37,7 @@
 
 			# START FORM DO NOT REMOVE THIS LINE
 			$this->form = [];
-			$this->form[] = ['label'=>'Detail Sla','name'=>'detail_sla_id','type'=>'select2','validation'=>'required|','width'=>'col-sm-10','datatable'=>'detail_sla,uraian'];
+			$this->form[] = ['label'=>'Detail Sla','name'=>'detail_sla_id','type'=>'select2','validation'=>'required|','width'=>'col-sm-10','datatable'=>'detail_sla,uraian','datatable_where'=>'tahun='.CRUDBooster::CurrYear().''];
 			$this->form[] = ['label'=>'Group Sla','name'=>'group_sla_id','type'=>'select2','validation'=>'required','width'=>'col-sm-9','datatable'=>'group_sla,uraian'];
 			$this->form[] = ['label'=>'Rincian Pekerjaan','name'=>'rincian_pekerjaan_id','type'=>'select2','validation'=>'required','width'=>'col-sm-9','datatable'=>'rincian_pekerjaan,uraian'];
 			# END FORM DO NOT REMOVE THIS LINE
@@ -268,7 +268,9 @@
 	    */
 	    public function hook_after_add($id) {        
 	        //Your code here
-
+			// cek data sla aset
+			$a = DB::table('sub_detail_sla')->where('id' , $id)->first();
+			
 	    }
 
 	    /* 

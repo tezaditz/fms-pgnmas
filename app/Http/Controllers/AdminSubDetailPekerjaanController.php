@@ -117,7 +117,13 @@
 	        | @icon  = Icon from Awesome.
 	        | 
 	        */
-	        $this->index_button = array();
+			$this->index_button = array();
+
+			$a = DB::table('detail_pekerjaan')->where('id' , $_GET['parent_id'])->first();
+			$b = DB::table('m_pekerjaan')->where('id' , $a->m_pekerjaan_id)->first();
+
+
+			$this->index_button[] = ['label'=>'Refresh Data','url'=>'/pgnmas/pekerjaan/generate_jadwal/'.$a->id.'/'.$b->period.'/'.$a->detail_sla_id.'',"icon"=>"fa fa-refresh",'color'=>'success'];
 			// $this->index_button[] = ['label'=>'Refresh Data','url'=>url()->current(),"icon"=>"fa fa-print"];
 
 
