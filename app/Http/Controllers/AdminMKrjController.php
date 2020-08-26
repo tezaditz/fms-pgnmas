@@ -122,7 +122,7 @@
 	        | 
 	        */
 	        $this->index_button = array();
-
+			
 
 
 	        /* 
@@ -287,8 +287,9 @@
 
 			$a = DB::table('m_pekerjaan')->where('aset_id' , $postdata['aset_id'])
 										 ->where('period' , $postdata['period'])
+										 ->where('tahun' , CRUDBooster::CurrYear())
 										 ->get();
-			if(!empty($a)){
+			if(Count($a) != 0){
 				$to = '/pgnmas/m_krj';
 				$message = 'Tindaklanjut untuk Aset pada periode ini sudah Tersedia!';
 				$type = 'info';
@@ -515,7 +516,7 @@
 			// return $bulan;
 			$getJadwal 		= DB::table('master_jadwal_sla')->where('detail_sla_id' , $detail_sla_id)->get();
 			// return $getJadwal;
-			if(!empty($getJadwal)){
+			if(Count($getJadwal) != 0){
 				foreach ($getJadwal as $key => $value) {
 					$tanggal_awal 	= Carbon::create(CRUDBooster::CurrYear() , $bulan , 1 , 0 , 0 ,0);
 					$tanggal_akhir 	= Carbon::create(CRUDBooster::CurrYear() , $bulan + 1 , 0 , 0 , 0 ,0);
@@ -577,9 +578,13 @@
 							// 		$b = $tanggal->dayOfWeek;				// menyatakan hari apa
 							// 	return 'Minggu Ke : '. $a . 'Hari ke :'. $b;
 							// }
-							
-														
-							$a = $this->GetWeekNumber($tanggal);	// menyatakan minggu ke berapa
+							$cek_isi = DB::table('sub_detail_pekerjaan')->where('tanggal' , $tanggal)
+																		->where('detail_pekerjaan_id' , $detail_pekerjaan_id)
+																		->where('foto_sebelum' , '!=' , 'uploads/img/no_images.png')
+																		->where('foto_sesudah' , '!=' , 'uploads/img/no_images.png')
+																		->get();
+							if(Count($cek_isi) == 0){
+								$a = $this->GetWeekNumber($tanggal);	// menyatakan minggu ke berapa
 							$b = $tanggal->dayOfWeek;				// menyatakan hari apa
 
 							// isi nilai
@@ -807,12 +812,14 @@
 								}	
 							// end isi nilai
 							DB::table('sub_detail_pekerjaan')->insert($insert);
+							}
+							
 						};
 						
 					}
 				}
 			}
-			return 'Generate Jadwal Selesai';
+			return redirect()->back();
 		}
 
 		public function resetTindakLanjut($id){

@@ -382,7 +382,7 @@
 
 		public function getEdit($id)
 		{
-			
+			return $this->refreshdata($id);
 			if(!CRUDBooster::isUpdate() && $this->global_privilege==FALSE || $this->button_edit==FALSE) {    
 				CRUDBooster::redirect(CRUDBooster::adminPath(),trans("crudbooster.denied_access"));
 			  }
@@ -461,6 +461,15 @@
 			$type = 'info';
 			CRUDBooster::redirect($to,$message,$type);
 
+		}
+
+		public function refreshdata($id){
+			$a = DB::table('ketersediaan_sla')->where('aset_id' , $id)
+					->pluck('rincian_pekerjaan_id')
+					->toArray();
+			$b = DB::table('rincian_pekerjaan')->whereNotIn('id' , $a)
+					->pluck('id')->toArray();
+			// $c = DB::table('sub_detail_sla')
 		}
 
 
