@@ -358,7 +358,7 @@ class PenilaianSlaController extends Controller
                     $data['lokasi']     = $aset->nama . '(' . $aset->alamat . ')';
                     $data['pelaksanaan'] = $master->persentase_pelaksanaan . ' %';
                     $data['pencapaian'] = $master->pencapaian . ' %';
-                    $data['link']       = url('/') . '/pgnmas/loginfromemail/' . $value->name . '/'. $value->password_code .'/'. $master->id .'/'. CRUDBooster::CurrYear();
+                    $data['link']       = url('/') . '/pgnmas/loginfromemail/' . $value->name . '/'. $value->password_code .'/'. $master->id;
                     $data['bulan']      = $bulan->nama;
                     $data['tahun']      = CRUDBooster::CurrYear();
                     $email_tujuan       = $value->email;
